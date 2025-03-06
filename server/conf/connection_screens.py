@@ -26,15 +26,19 @@ from evennia import utils
 
 CONNECTION_SCREEN = """
 |b==============================================================|n
- Welcome to |g{}|n, version {}!
+ Willkommen bei |g{}|n, Version {}!
 
- If you have an existing account, connect to it by typing:
-      |wconnect <username> <password>|n
- If you need to create an account, type (without the <>'s):
-      |wcreate <username> <password>|n
+ Wenn du bereits ein Benutzerkonto hast, 
+ verbinde dich damit, indem du eingibst:
+      |wconnect <Benutzername> <Passwort>|n
+ Falls du ein neues Benutzerkonto erstellen möchtest, 
+ gib Folgendes ein (ohne die < >):
+      |wcreate <Benutzername> <Passwort>|n
 
- If you have spaces in your username, enclose it in quotes.
- Enter |whelp|n for more info. |wlook|n will re-show this screen.
+ Wenn dein Benutzername Leerzeichen enthält, 
+ setze ihn in Anführungszeichen.
+ Gib |whelp|n ein, um weitere Informationen zu erhalten. 
+ |wlook|n zeigt diesen Bildschirm erneut an.
 |b==============================================================|n""".format(
     settings.SERVERNAME, utils.get_evennia_version("short")
 )
