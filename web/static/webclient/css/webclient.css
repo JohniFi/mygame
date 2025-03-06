@@ -22,14 +22,14 @@ body {
 }
 @media screen and (max-width: 480px) {
   body {
-    font-size: .5rem;
-    line-height: .7rem;
+    font-size: .5em;
+    /*line-height: .7rem;*/
   }
 }
 
 a:link, a:visited { color: inherit; }
 a:hover, a:active { color: inherit;
-                    font-weight: bold;}
+  text-shadow: 0 0 2px currentColor;}
 
 /* Set this to e.g. bolder if wanting to have ansi-highlights bolden
  * stand-alone text.*/
@@ -141,8 +141,10 @@ div {margin:0px;}
   height: 100%;
 }
 
+/*
 #inputfield:focus {
 }
+*/
 
 /* prompt area above input field */
 .prompt {
