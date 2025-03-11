@@ -8,7 +8,11 @@ with a location in the game world (like Characters, Rooms, Exits).
 
 """
 
-from evennia.objects.objects import DefaultObject
+from collections import defaultdict
+from django.utils.translation import gettext as _
+from evennia.objects.objects import _INFLECT, DefaultObject
+from evennia.utils import ansi
+from evennia.utils.utils import iter_to_str, make_iter
 
 
 class ObjectParent:
@@ -21,6 +25,411 @@ class ObjectParent:
     take precedence.
 
     """
+
+    def get_search_direct_match(self, searchdata, **kwargs):
+        """
+        This method is called by the search method to allow for direct
+        replacements, such as 'me' always being an alias for this object.
+
+        Args:
+            searchdata (str): The search string to replace.
+            **kwargs (any): These are the same as passed to the `search` method.
+
+        Returns:
+            tuple: A tuple `(should_return, str or Obj)`, where `should_return` is a boolean
+            indicating the `.search` method should return the result immediately without further
+            processing. If `should_return` is `True`, the second element of the tuple is the result
+            that is returned.
+
+        """
+        if isinstance(searchdata, str):
+            candidates = kwargs.get("candidates") or []
+            global_search = kwargs.get("global_search", False)
+            match searchdata.lower():
+                case "me" | "self":
+                    return global_search or self in candidates, self
+                case "here":
+                    return global_search or self.location in candidates, self.location
+        return False, searchdata
+
+    def get_numbered_name(self, count, looker, **kwargs):
+        """
+        Return the numbered (singular, plural) forms of this object's key. This is by default called
+        by return_appearance and is used for grouping multiple same-named of this object. Note that
+        this will be called on *every* member of a group even though the plural name will be only
+        shown once. Also the singular display version, such as 'an apple', 'a tree' is determined
+        from this method.
+
+        Args:
+            count (int): Number of objects of this type
+            looker (DefaultObject): Onlooker. Not used by default.
+
+        Keyword Args:
+            key (str): Optional key to pluralize. If not given, the object's `.get_display_name()`
+                method is used.
+            return_string (bool): If `True`, return only the singular form if count is 0,1 or
+                the plural form otherwise. If `False` (default), return both forms as a tuple.
+            no_article (bool): If `True`, do not return an article if `count` is 1.
+
+        Returns:
+            tuple: This is a tuple `(str, str)` with the singular and plural forms of the key
+            including the count.
+
+        Examples:
+        ::
+
+            obj.get_numbered_name(3, looker, key="foo")
+                  -> ("a foo", "three foos")
+            obj.get_numbered_name(1, looker, key="Foobert", return_string=True)
+                  -> "a Foobert"
+            obj.get_numbered_name(1, looker, key="Foobert", return_string=True, no_article=True)
+                  -> "Foobert"
+        """
+        key = kwargs.get("key", self.get_display_name(looker))
+        raw_key = self.name
+        key = ansi.ANSIString(
+            key
+        )  # this is needed to allow inflection of colored names
+        try:
+            plural = _INFLECT.plural(key, count)
+            plural = "{} {}".format(
+                _INFLECT.number_to_words(count, threshold=12), plural
+            )
+        except IndexError:
+            # this is raised by inflect if the input is not a proper noun
+            plural = key
+        singular = _INFLECT.an(key)
+        if not self.aliases.get(plural, category=self.plural_category):
+            # we need to wipe any old plurals/an/a in case key changed in the interrim
+            self.aliases.clear(category=self.plural_category)
+            self.aliases.add(plural, category=self.plural_category)
+            # save the singular form as an alias here too so we can display "an egg" and also
+            # look at 'an egg'.
+            self.aliases.add(singular, category=self.plural_category)
+
+        if kwargs.get("no_article") and count == 1:
+            if kwargs.get("return_string"):
+                return key
+            return key, key
+
+        if kwargs.get("return_string"):
+            return singular if count == 1 else plural
+
+        return singular, plural
+
+    def get_display_exits(self, looker, **kwargs):
+        """
+        Get the 'exits' component of the object description. Called by `return_appearance`.
+
+        Args:
+            looker (DefaultObject): Object doing the looking.
+            **kwargs: Arbitrary data for use when overriding.
+
+        Keyword Args:
+            exit_order (iterable of str): The order in which exits should be listed, with
+                unspecified exits appearing at the end, alphabetically.
+
+        Returns:
+            str: The exits display data.
+
+        Examples:
+        ::
+
+            For a room with exits in the order 'portal', 'south', 'north', and 'out':
+                obj.get_display_name(looker, exit_order=('north', 'south'))
+                    -> "Exits: north, south, out, and portal."  (markup not shown here)
+        """
+
+        def _sort_exit_names(names):
+            exit_order = kwargs.get("exit_order")
+            if not exit_order:
+                return names
+            sort_index = {name: key for key, name in enumerate(exit_order)}
+            names = sorted(names)
+            end_pos = len(sort_index)
+            names.sort(key=lambda name: sort_index.get(name, end_pos))
+            return names
+
+        exits = self.filter_visible(
+            self.contents_get(content_type="exit"), looker, **kwargs
+        )
+        exit_names = (exi.get_display_name(looker, **kwargs) for exi in exits)
+        exit_names = iter_to_str(_sort_exit_names(exit_names))
+
+        return f"|wExits:|n {exit_names}" if exit_names else ""
+
+    def get_display_characters(self, looker, **kwargs):
+        """
+        Get the 'characters' component of the object description. Called by `return_appearance`.
+
+        Args:
+            looker (DefaultObject): Object doing the looking.
+            **kwargs: Arbitrary data for use when overriding.
+        Returns:
+            str: The character display data.
+
+        """
+        characters = self.filter_visible(
+            self.contents_get(content_type="character"), looker, **kwargs
+        )
+        character_names = iter_to_str(
+            char.get_display_name(looker, **kwargs) for char in characters
+        )
+
+        return f"|wCharacters:|n {character_names}" if character_names else ""
+
+    def get_display_things(self, looker, **kwargs):
+        """
+        Get the 'things' component of the object description. Called by `return_appearance`.
+
+        Args:
+            looker (DefaultObject): Object doing the looking.
+            **kwargs: Arbitrary data for use when overriding.
+        Returns:
+            str: The things display data.
+
+        """
+        # sort and handle same-named things
+        things = self.filter_visible(
+            self.contents_get(content_type="object"), looker, **kwargs
+        )
+
+        grouped_things = defaultdict(list)
+        for thing in things:
+            grouped_things[thing.get_display_name(looker, **kwargs)].append(thing)
+
+        thing_names = []
+        for thingname, thinglist in sorted(grouped_things.items()):
+            nthings = len(thinglist)
+            thing = thinglist[0]
+            singular, plural = thing.get_numbered_name(nthings, looker, key=thingname)
+            thing_names.append(singular if nthings == 1 else plural)
+        thing_names = iter_to_str(thing_names)
+        return f"|wYou see:|n {thing_names}" if thing_names else ""
+
+    def announce_move_from(
+        self, destination, msg=None, mapping=None, move_type="move", **kwargs
+    ):
+        """
+        Called if the move is to be announced. This is
+        called while we are still standing in the old
+        location.
+
+        Args:
+            destination (DefaultObject): The place we are going to.
+            msg (str, optional): a replacement message.
+            mapping (dict, optional): additional mapping objects.
+            move_type (str): The type of move. "give", "traverse", etc.
+                This is an arbitrary string provided to obj.move_to().
+                Useful for altering messages or altering logic depending
+                on the kind of movement.
+            **kwargs: Arbitrary, optional arguments for users
+                overriding the call (unused by default).
+
+        Notes:
+
+            You can override this method and call its parent with a
+            message to simply change the default message.  In the string,
+            you can use the following as mappings:
+
+            - `{object}`: the object which is moving.
+            - `{exit}`: the exit from which the object is moving (if found).
+            - `{origin}`: the location of the object before the move.
+            - `{destination}`: the location of the object after moving.
+
+        """
+        if not self.location:
+            return
+        if msg:
+            string = msg
+        else:
+            string = "{object} is leaving {origin}, heading for {destination}."
+
+        location = self.location
+        exits = [
+            o
+            for o in location.contents
+            if o.location is location and o.destination is destination
+        ]
+        if not mapping:
+            mapping = {}
+
+        mapping.update(
+            {
+                "object": self,
+                "exit": exits[0] if exits else "somewhere",
+                "origin": location or "nowhere",
+                "destination": destination or "nowhere",
+            }
+        )
+
+        location.msg_contents(
+            (string, {"type": move_type}),
+            exclude=(self,),
+            from_obj=self,
+            mapping=mapping,
+        )
+
+    def at_say(
+        self,
+        message,
+        msg_self=None,
+        msg_location=None,
+        receivers=None,
+        msg_receivers=None,
+        **kwargs,
+    ):
+        """
+        Display the actual say (or whisper) of self.
+
+        This hook should display the actual say/whisper of the object in its
+        location.  It should both alert the object (self) and its
+        location that some text is spoken.  The overriding of messages or
+        `mapping` allows for simple customization of the hook without
+        re-writing it completely.
+
+        Args:
+            message (str): The message to convey.
+            msg_self (bool or str, optional): If boolean True, echo `message` to self. If a string,
+                return that message. If False or unset, don't echo to self.
+            msg_location (str, optional): The message to echo to self's location.
+            receivers (DefaultObject or iterable, optional): An eventual receiver or receivers of the
+                message (by default only used by whispers).
+            msg_receivers(str): Specific message to pass to the receiver(s). This will parsed
+                with the {receiver} placeholder replaced with the given receiver.
+        Keyword Args:
+            whisper (bool): If this is a whisper rather than a say. Kwargs
+                can be used by other verbal commands in a similar way.
+            mapping (dict): Pass an additional mapping to the message.
+
+        Notes:
+
+
+            Messages can contain {} markers. These are substituted against the values
+            passed in the `mapping` argument.
+            ::
+
+                msg_self = 'You say: "{speech}"'
+                msg_location = '{object} says: "{speech}"'
+                msg_receivers = '{object} whispers: "{speech}"'
+
+            Supported markers by default:
+
+            - {self}: text to self-reference with (default 'You')
+            - {speech}: the text spoken/whispered by self.
+            - {object}: the object speaking.
+            - {receiver}: replaced with a single receiver only for strings meant for a specific
+              receiver (otherwise 'None').
+            - {all_receivers}: comma-separated list of all receivers,
+              if more than one, otherwise same as receiver
+            - {location}: the location where object is.
+
+        """
+        msg_type = "say"
+        if kwargs.get("whisper", False):
+            # whisper mode
+            msg_type = "whisper"
+            msg_self = (
+                '{self} whisper to {all_receivers}, "|n{speech}|n"'
+                if msg_self is True
+                else msg_self
+            )
+            msg_receivers = msg_receivers or '{object} whispers: "|n{speech}|n"'
+            msg_location = None
+        else:
+            msg_self = '{self} say, "|n{speech}|n"' if msg_self is True else msg_self
+            msg_location = msg_location or '{object} says, "{speech}"'
+            msg_receivers = msg_receivers or message
+
+        custom_mapping = kwargs.get("mapping", {})
+        receivers = make_iter(receivers) if receivers else None
+        location = self.location
+
+        if msg_self:
+            self_mapping = {
+                "self": "You",
+                "object": self.get_display_name(self),
+                "location": location.get_display_name(self) if location else None,
+                "receiver": None,
+                "all_receivers": (
+                    ", ".join(recv.get_display_name(self) for recv in receivers)
+                    if receivers
+                    else None
+                ),
+                "speech": message,
+            }
+            self_mapping.update(custom_mapping)
+            self.msg(
+                text=(msg_self.format_map(self_mapping), {"type": msg_type}),
+                from_obj=self,
+            )
+
+        if receivers and msg_receivers:
+            receiver_mapping = {
+                "self": "You",
+                "object": None,
+                "location": None,
+                "receiver": None,
+                "all_receivers": None,
+                "speech": message,
+            }
+            for receiver in make_iter(receivers):
+                individual_mapping = {
+                    "object": self.get_display_name(receiver),
+                    "location": location.get_display_name(receiver),
+                    "receiver": receiver.get_display_name(receiver),
+                    "all_receivers": (
+                        ", ".join(recv.get_display_name(recv) for recv in receivers)
+                        if receivers
+                        else None
+                    ),
+                }
+                receiver_mapping.update(individual_mapping)
+                receiver_mapping.update(custom_mapping)
+                receiver.msg(
+                    text=(
+                        msg_receivers.format_map(receiver_mapping),
+                        {"type": msg_type},
+                    ),
+                    from_obj=self,
+                )
+
+        if self.location and msg_location:
+            location_mapping = {
+                "self": "You",
+                "object": self,
+                "location": location,
+                "all_receivers": (
+                    ", ".join(str(recv) for recv in receivers) if receivers else None
+                ),
+                "receiver": None,
+                "speech": message,
+            }
+            location_mapping.update(custom_mapping)
+            exclude = []
+            if msg_self:
+                exclude.append(self)
+            if receivers:
+                exclude.extend(receivers)
+            self.location.msg_contents(
+                text=(msg_location, {"type": msg_type}),
+                from_obj=self,
+                exclude=exclude,
+                mapping=location_mapping,
+            )
+
+    def at_rename(self, oldname, newname):
+        """
+        This Hook is called by @name on a successful rename.
+
+        Args:
+            oldname (str): The instance's original name.
+            newname (str): The new name for the instance.
+
+        """
+
+        # Clear plural aliases set by DefaultObject.get_numbered_name
+        self.aliases.clear(category=self.plural_category)
 
 
 class Object(ObjectParent, DefaultObject):
