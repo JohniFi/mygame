@@ -10,7 +10,7 @@ with a location in the game world (like Characters, Rooms, Exits).
 
 from collections import defaultdict
 from django.utils.translation import gettext as _
-from evennia.objects.objects import _INFLECT, DefaultObject
+from evennia.objects.objects import DefaultObject
 from evennia.utils import ansi
 from evennia.utils.utils import iter_to_str, make_iter
 
@@ -25,6 +25,9 @@ class ObjectParent:
     take precedence.
 
     """
+
+    # TODO: evaluate LANGUAGE_CODE and only overwrite methods if German (DE)
+    # TODO: i18n of Strings from "mygame". Possibly add pullrequest to mark Strings here with _("...") so you don't need to overwrite get_display_things
 
     def get_search_direct_match(self, searchdata, **kwargs):
         """
@@ -46,71 +49,79 @@ class ObjectParent:
             candidates = kwargs.get("candidates") or []
             global_search = kwargs.get("global_search", False)
             match searchdata.lower():
-                case "me" | "self":
+                case "me" | "self" | "mich" | "mir" | "selbst":
                     return global_search or self in candidates, self
-                case "here":
+                case "here" | "hier":
                     return global_search or self.location in candidates, self.location
         return False, searchdata
 
     def get_numbered_name(self, count, looker, **kwargs):
         """
-        Return the numbered (singular, plural) forms of this object's key. This is by default called
-        by return_appearance and is used for grouping multiple same-named of this object. Note that
-        this will be called on *every* member of a group even though the plural name will be only
-        shown once. Also the singular display version, such as 'an apple', 'a tree' is determined
-        from this method.
+        Returns the object's name with correct pluralization and article.
 
-        Args:
-            count (int): Number of objects of this type
-            looker (DefaultObject): Onlooker. Not used by default.
-
-        Keyword Args:
-            key (str): Optional key to pluralize. If not given, the object's `.get_display_name()`
-                method is used.
-            return_string (bool): If `True`, return only the singular form if count is 0,1 or
-                the plural form otherwise. If `False` (default), return both forms as a tuple.
-            no_article (bool): If `True`, do not return an article if `count` is 1.
-
-        Returns:
-            tuple: This is a tuple `(str, str)` with the singular and plural forms of the key
-            including the count.
-
-        Examples:
-        ::
-
-            obj.get_numbered_name(3, looker, key="foo")
-                  -> ("a foo", "three foos")
-            obj.get_numbered_name(1, looker, key="Foobert", return_string=True)
-                  -> "a Foobert"
-            obj.get_numbered_name(1, looker, key="Foobert", return_string=True, no_article=True)
-                  -> "Foobert"
+        looks up object attributes "plural", "gender", "accusative"
+        "plural": <plural name of object>
+        "gender": ("m", "f", "n")
+        "accusative": <accusative singular name of object>
         """
         key = kwargs.get("key", self.get_display_name(looker))
         raw_key = self.name
         key = ansi.ANSIString(
             key
         )  # this is needed to allow inflection of colored names
-        try:
-            plural = _INFLECT.plural(key, count)
-            plural = "{} {}".format(
-                _INFLECT.number_to_words(count, threshold=12), plural
-            )
-        except IndexError:
-            # this is raised by inflect if the input is not a proper noun
-            plural = key
-        singular = _INFLECT.an(key)
-        if not self.aliases.get(plural, category=self.plural_category):
-            # we need to wipe any old plurals/an/a in case key changed in the interrim
-            self.aliases.clear(category=self.plural_category)
-            self.aliases.add(plural, category=self.plural_category)
-            # save the singular form as an alias here too so we can display "an egg" and also
-            # look at 'an egg'.
-            self.aliases.add(singular, category=self.plural_category)
+
+        # use case if corresponding attribute is set (e.g. "accusative")
+        key = self.attributes.get(kwargs.get("case"), default=key)
+
+        # Retrieve custom attribute "plural"
+        plural = self.attributes.get(
+            "plural", default=key
+        )  # Default plural form = no change (just key)
+        gender = self.attributes.get("gender", default="n")  # Default to neutral
 
         if kwargs.get("no_article") and count == 1:
             if kwargs.get("return_string"):
                 return key
             return key, key
+
+        article = (
+            {
+                "nominative": {"m": "ein", "f": "eine", "n": "ein"},
+                "accusative": {"m": "einen", "f": "eine", "n": "ein"},
+            }
+            .get(kwargs.get("case", "nominative"))
+            .get(gender, "ein")
+        )
+
+        singular = f"{article} {key}"
+
+        # update aliases
+        self.aliases.add(plural, category=self.plural_category)
+        self.aliases.add(singular, category=self.plural_category)
+
+        match count:
+            case 0:
+                num = "k" + article  # ein -> kein, eine -> keine
+            case 1:
+                num = article
+            case count if count in range(2, 12 + 1):
+                num = {
+                    2: "zwei",
+                    3: "drei",
+                    4: "vier",
+                    5: "fünf",
+                    6: "sechs",
+                    7: "sieben",
+                    8: "acht",
+                    9: "neun",
+                    10: "zehn",
+                    11: "elf",
+                    12: "zwölf",
+                }.get(count)
+            case _:
+                num = count
+
+        plural = f"{num} {plural}"
 
         if kwargs.get("return_string"):
             return singular if count == 1 else plural
@@ -154,9 +165,13 @@ class ObjectParent:
             self.contents_get(content_type="exit"), looker, **kwargs
         )
         exit_names = (exi.get_display_name(looker, **kwargs) for exi in exits)
-        exit_names = iter_to_str(_sort_exit_names(exit_names))
+        exit_names = iter_to_str(
+            _sort_exit_names(exit_names), endsep=_("und")
+        )  # TODO: Pull-Request for i18n
 
-        return f"|wExits:|n {exit_names}" if exit_names else ""
+        return (
+            _("|wAusgänge:|n {e}").format(e=exit_names) if exit_names else ""
+        )  # TODO: Pull-Request for i18
 
     def get_display_characters(self, looker, **kwargs):
         """
@@ -173,10 +188,15 @@ class ObjectParent:
             self.contents_get(content_type="character"), looker, **kwargs
         )
         character_names = iter_to_str(
-            char.get_display_name(looker, **kwargs) for char in characters
+            (char.get_display_name(looker, **kwargs) for char in characters),
+            endsep=_("und"),  # TODO: Pull-Request for i18
         )
 
-        return f"|wCharacters:|n {character_names}" if character_names else ""
+        return (
+            _("|wCharactere:|n {c}").format(c=character_names)
+            if character_names
+            else ""
+        )  # TODO: Pull-Request for i18
 
     def get_display_things(self, looker, **kwargs):
         """
@@ -202,10 +222,20 @@ class ObjectParent:
         for thingname, thinglist in sorted(grouped_things.items()):
             nthings = len(thinglist)
             thing = thinglist[0]
-            singular, plural = thing.get_numbered_name(nthings, looker, key=thingname)
+            singular, plural = thing.get_numbered_name(
+                nthings, looker, key=thingname, case="accusative"
+            )
             thing_names.append(singular if nthings == 1 else plural)
-        thing_names = iter_to_str(thing_names)
-        return f"|wYou see:|n {thing_names}" if thing_names else ""
+        thing_names = iter_to_str(
+            thing_names, endsep=_("und")
+        )  # TODO: Pull-Request for `endsep` i18n
+        return (
+            _("|wDu siehst:|n {thing_names}").format(
+                thing_names=thing_names
+            )  # TODO: Pull-Request for i18n
+            if thing_names
+            else ""
+        )
 
     def announce_move_from(
         self, destination, msg=None, mapping=None, move_type="move", **kwargs
@@ -243,7 +273,9 @@ class ObjectParent:
         if msg:
             string = msg
         else:
-            string = "{object} is leaving {origin}, heading for {destination}."
+            string = _(
+                "{object} verlässt {origin} in Richtung {destination}."
+            )  # TODO: Pull-Request for i18
 
         location = self.location
         exits = [
@@ -257,9 +289,9 @@ class ObjectParent:
         mapping.update(
             {
                 "object": self,
-                "exit": exits[0] if exits else "somewhere",
-                "origin": location or "nowhere",
-                "destination": destination or "nowhere",
+                "exit": exits[0] if exits else "irgendwo",
+                "origin": location or "nirgendwo",
+                "destination": destination or "nirgendwo",
             }
         )
 
@@ -330,15 +362,21 @@ class ObjectParent:
             # whisper mode
             msg_type = "whisper"
             msg_self = (
-                '{self} whisper to {all_receivers}, "|n{speech}|n"'
+                _(
+                    '{self} flüsterst zu {all_receivers}: "|n{speech}|n"'
+                )  # TODO: Pull-Request f
                 if msg_self is True
                 else msg_self
             )
-            msg_receivers = msg_receivers or '{object} whispers: "|n{speech}|n"'
+            msg_receivers = msg_receivers or _(
+                '{object} flüstert: "|n{speech}|n"'
+            )  # TODO: Pull-Request for i18
             msg_location = None
         else:
-            msg_self = '{self} say, "|n{speech}|n"' if msg_self is True else msg_self
-            msg_location = msg_location or '{object} says, "{speech}"'
+            msg_self = (
+                _('{self} sagst: "|n{speech}|n"') if msg_self is True else msg_self
+            )  # TODO: Pull-Request for i18
+            msg_location = msg_location or '{object} sagt, "{speech}"'
             msg_receivers = msg_receivers or message
 
         custom_mapping = kwargs.get("mapping", {})
@@ -347,7 +385,7 @@ class ObjectParent:
 
         if msg_self:
             self_mapping = {
-                "self": "You",
+                "self": _("Du"),  # TODO: Pull-Request for i18
                 "object": self.get_display_name(self),
                 "location": location.get_display_name(self) if location else None,
                 "receiver": None,
@@ -366,7 +404,7 @@ class ObjectParent:
 
         if receivers and msg_receivers:
             receiver_mapping = {
-                "self": "You",
+                "self": _("Du"),  # TODO: Pull-Request for i18
                 "object": None,
                 "location": None,
                 "receiver": None,
@@ -396,7 +434,7 @@ class ObjectParent:
 
         if self.location and msg_location:
             location_mapping = {
-                "self": "You",
+                "self": _("Du"),  # TODO: Pull-Request for i18
                 "object": self,
                 "location": location,
                 "all_receivers": (
@@ -430,6 +468,11 @@ class ObjectParent:
 
         # Clear plural aliases set by DefaultObject.get_numbered_name
         self.aliases.clear(category=self.plural_category)
+        # Clear plural and accusative attributes
+        self.attributes.remove("plural")
+        self.attributes.remove("accusative")
+        # probably same gender, so keep that for now
+        # self.attributes.remove("gender")
 
 
 class Object(ObjectParent, DefaultObject):
