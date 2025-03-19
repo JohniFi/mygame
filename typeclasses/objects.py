@@ -26,6 +26,9 @@ class ObjectParent:
 
     """
 
+    # Used by get_display_desc when self.db.desc is None
+    default_description = _("Du siehst nichts Besonderes")
+
     # TODO: evaluate LANGUAGE_CODE and only overwrite methods if German (DE)
     # TODO: i18n of Strings from "mygame". Possibly add pullrequest to mark Strings here with _("...") so you don't need to overwrite get_display_things
 
@@ -70,8 +73,12 @@ class ObjectParent:
             key
         )  # this is needed to allow inflection of colored names
 
-        # use case if corresponding attribute is set (e.g. "accusative")
-        key = self.attributes.get(kwargs.get("case"), default=key)
+        print("Key1: " + key)
+
+        if kwargs.get("case"):
+            # use case if corresponding attribute is set (e.g. "accusative")
+            key = self.attributes.get(kwargs.get("case"), default=key)
+        print("Key2: " + key)
 
         # Retrieve custom attribute "plural"
         plural = self.attributes.get(
