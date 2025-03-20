@@ -200,7 +200,7 @@ class ObjectParent:
         )
 
         return (
-            _("|wCharactere:|n {c}").format(c=character_names)
+            _("|wCharaktere:|n {c}").format(c=character_names)
             if character_names
             else ""
         )  # TODO: Pull-Request for i18
