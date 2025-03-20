@@ -289,9 +289,9 @@ class ObjectParent:
         mapping.update(
             {
                 "object": self,
-                "exit": exits[0] if exits else "irgendwo",
-                "origin": location or "nirgendwo",
-                "destination": destination or "nirgendwo",
+                "exit": exits[0] if exits else "irgendwo", # TODO: Pull-Request for i18
+                "origin": location or "nirgendwo", # TODO: Pull-Request for i18
+                "destination": destination or "nirgendwo", # TODO: Pull-Request for i18
             }
         )
 
@@ -363,14 +363,14 @@ class ObjectParent:
             msg_type = "whisper"
             msg_self = (
                 _(
-                    '{self} flüsterst zu {all_receivers}: "|n{speech}|n"'
-                )  # TODO: Pull-Request f
+                    '{self} flüsterst {all_receivers} zu: "|n{speech}|n"'
+                )  # TODO: Pull-Request for i18n
                 if msg_self is True
                 else msg_self
             )
             msg_receivers = msg_receivers or _(
                 '{object} flüstert: "|n{speech}|n"'
-            )  # TODO: Pull-Request for i18
+            )  # TODO: Pull-Request for i18n
             msg_location = None
         else:
             msg_self = (
@@ -385,7 +385,7 @@ class ObjectParent:
 
         if msg_self:
             self_mapping = {
-                "self": _("Du"),  # TODO: Pull-Request for i18
+                "self": _("Du"),  # TODO: Pull-Request for i18n
                 "object": self.get_display_name(self),
                 "location": location.get_display_name(self) if location else None,
                 "receiver": None,
@@ -404,7 +404,7 @@ class ObjectParent:
 
         if receivers and msg_receivers:
             receiver_mapping = {
-                "self": _("Du"),  # TODO: Pull-Request for i18
+                "self": _("Du"),  # TODO: Pull-Request for i18n
                 "object": None,
                 "location": None,
                 "receiver": None,

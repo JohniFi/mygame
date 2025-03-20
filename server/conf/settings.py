@@ -34,6 +34,13 @@ from evennia.settings_default import *
 # This is the name of your game. Make it catchy!
 SERVERNAME = "mygame"
 
+# Controls whether new account registration is available.
+# Set to False to lock down the registration page and the create account command.
+#NEW_ACCOUNT_REGISTRATION_ENABLED = False
+
+# Activate telnet service
+TELNET_ENABLED = False
+
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
@@ -55,3 +62,7 @@ USE_I18N = True
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
 LANGUAGE_CODE = 'de'
+
+# Where to find locales (no need to change this, most likely)
+# prio translation files from game over evennia core
+# LOCALE_PATHS = [os.path.join(GAME_DIR, "locale/"), os.path.join(EVENNIA_DIR, "locale/")]
