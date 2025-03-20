@@ -66,3 +66,10 @@ LANGUAGE_CODE = 'de'
 # Where to find locales (no need to change this, most likely)
 # prio translation files from game over evennia core
 # LOCALE_PATHS = [os.path.join(GAME_DIR, "locale/"), os.path.join(EVENNIA_DIR, "locale/")]
+
+######################################################################
+# Help system
+######################################################################
+
+# The help category of a command if not specified.
+COMMAND_DEFAULT_HELP_CATEGORY = "allgemein"
