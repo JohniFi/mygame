@@ -15,8 +15,11 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds
-from evennia.commands.default import general
-from commands import command_de
+from evennia.commands.default import (
+    general,
+)
+from commands import commands_de
+from commands import commands_lock
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -36,9 +39,33 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
-        self.add(command_de.CmdLook())
-        self.add(command_de.CmdInventory())
-        self.add(command_de.CmdGet())
+        self.add(commands_de.CmdLook())
+
+        self.add(commands_lock.CmdNick)
+
+        self.add(commands_de.CmdInventory())
+
+        self.remove(general.CmdGet())
+        self.add(commands_de.CmdGet())
+
+        self.add(commands_de.CmdDrop())
+
+        self.remove(general.CmdGive())
+        self.add(commands_de.CmdGive())
+
+        self.add(commands_de.CmdSetDesc())
+
+        self.add(commands_de.CmdSay())
+
+        self.remove(general.CmdWhisper())
+        self.add(commands_de.CmdWhisper())
+
+        self.add(commands_de.CmdPose())
+
+        self.add(commands_de.CmdAccess())
+
+        self.add(commands_de.CmdHelp())
+
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
@@ -59,6 +86,15 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        self.add(commands_lock.CmdCharCreate())
+        self.add(commands_lock.CmdCharDelete())
+        self.add(commands_lock.CmdIC())
+        self.add(commands_lock.CmdOOC())
+        self.add(commands_lock.CmdSessions())
+        self.add(commands_lock.CmdOption())
+        self.add(commands_lock.CmdColorTest())
+        self.add(commands_lock.CmdQuell())
+        self.add(commands_lock.CmdStyle())
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
