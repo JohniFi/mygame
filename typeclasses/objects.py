@@ -73,12 +73,9 @@ class ObjectParent:
             key
         )  # this is needed to allow inflection of colored names
 
-        print("Key1: " + key)
-
         if kwargs.get("case"):
             # use case if corresponding attribute is set (e.g. "accusative")
             key = self.attributes.get(kwargs.get("case"), default=key)
-        print("Key2: " + key)
 
         # Retrieve custom attribute "plural"
         plural = self.attributes.get(
