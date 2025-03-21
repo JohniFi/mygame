@@ -62,10 +62,11 @@ class ObjectParent:
         """
         Returns the object's name with correct pluralization and article.
 
-        looks up object attributes "plural", "gender", "accusative"
+        looks up object attributes "plural", "gender", "case" 
         "plural": <plural name of object>
         "gender": ("m", "f", "n")
-        "accusative": <accusative singular name of object>
+        at the moment only case supportet: "accusative": <accusative singular name of object>
+        default case "nominative" is just the key
         """
         key = kwargs.get("key", self.get_display_name(looker))
         raw_key = self.name
@@ -73,14 +74,14 @@ class ObjectParent:
             key
         )  # this is needed to allow inflection of colored names
 
-        if kwargs.get("case"):
-            # use case if corresponding attribute is set (e.g. "accusative")
+        if count == 1:
+            # use case if corresponding attribute is set (e.g. "accusative": "Riesen")
             key = self.attributes.get(kwargs.get("case"), default=key)
+        # TODO: handle plural cases for "dative" and "genitive" (accusative plural = nominative plural)
 
         # Retrieve custom attribute "plural"
-        plural = self.attributes.get(
-            "plural", default=key
-        )  # Default plural form = no change (just key)
+        plural = self.attributes.get("plural", default=key)
+
         gender = self.attributes.get("gender", default="n")  # Default to neutral
 
         if kwargs.get("no_article") and count == 1:
@@ -92,6 +93,8 @@ class ObjectParent:
             {
                 "nominative": {"m": "ein", "f": "eine", "n": "ein"},
                 "accusative": {"m": "einen", "f": "eine", "n": "ein"},
+                "dative": {"m": "einem", "f": "einer", "n": "einem"},
+                "genitive": {"m": "eines", "f": "einer", "n": "eines"},
             }
             .get(kwargs.get("case", "nominative"))
             .get(gender, "ein")
@@ -293,9 +296,9 @@ class ObjectParent:
         mapping.update(
             {
                 "object": self,
-                "exit": exits[0] if exits else "irgendwo", # TODO: Pull-Request for i18
-                "origin": location or "nirgendwo", # TODO: Pull-Request for i18
-                "destination": destination or "nirgendwo", # TODO: Pull-Request for i18
+                "exit": exits[0] if exits else "irgendwo",  # TODO: Pull-Request for i18
+                "origin": location or "nirgendwo",  # TODO: Pull-Request for i18
+                "destination": destination or "nirgendwo",  # TODO: Pull-Request for i18
             }
         )
 

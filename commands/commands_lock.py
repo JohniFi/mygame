@@ -7,6 +7,9 @@ from evennia.commands.default import (
 class CmdNick(general.CmdNick):
     locks = "cmd:perm(Builder)"
 
+class CmdAccess(general.CmdAccess):
+    locks = "cmd:perm(Builder)"
+
 # ----- ACCOUNT -----
 class CmdCharCreate(account.CmdCharCreate):
     locks = "cmd:perm(Admin)"

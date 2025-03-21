@@ -62,7 +62,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
         self.add(commands_de.CmdPose())
 
-        self.add(commands_de.CmdAccess())
+        self.add(commands_lock.CmdAccess())
 
         self.add(commands_de.CmdHelp())
 
