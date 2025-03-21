@@ -74,9 +74,10 @@ class ObjectParent:
             key
         )  # this is needed to allow inflection of colored names
 
-        if count == 1:
-            # use case if corresponding attribute is set (e.g. "accusative": "Riesen")
-            key = self.attributes.get(kwargs.get("case"), default=key)
+        if kwargs.get("case"):
+            if count == 1:
+                # use case if corresponding attribute is set (e.g. "accusative": "Riesen")
+                key = self.attributes.get(kwargs.get("case"), default=key)
         # TODO: handle plural cases for "dative" and "genitive" (accusative plural = nominative plural)
 
         # Retrieve custom attribute "plural"

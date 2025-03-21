@@ -9,6 +9,7 @@ creation commands.
 """
 
 from evennia.objects.objects import DefaultCharacter
+from evennia.typeclasses.attributes import AttributeProperty
 
 from .objects import ObjectParent
 
@@ -23,4 +24,7 @@ class Character(ObjectParent, DefaultCharacter):
 
     """
 
-    pass
+    hp = AttributeProperty(default=1)
+    hp_max = AttributeProperty(default=1)
+
+    gold = AttributeProperty(default=0)
