@@ -49,6 +49,7 @@ See the `spawn` command and `evennia.prototypes.spawner.spawn` for more info.
 """
 
 from world.common.item_prototypes import *
+from world.common.npc_prototypes import *
 
 ## example of module-based prototypes using
 ## the variable name as `prototype_key` and
