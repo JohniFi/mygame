@@ -48,7 +48,8 @@ class ObjectParent:
             but it does not change an object's keys or aliases when searching.
 
         """
-        return f"|w{self.name}|n"
+        name = kwargs.get("key", self.name)
+        return f"|w{name}|n"
 
     def get_search_direct_match(self, searchdata, **kwargs):
         """
@@ -86,25 +87,23 @@ class ObjectParent:
         at the moment only case supportet: "accusative": <accusative singular name of object>
         default case "nominative" is just the key
         """
-        key = kwargs.get("key", self.get_display_name(looker))
-        raw_key = self.name
-        key = ansi.ANSIString(key)  # this is needed to allow inflection of colored names
+        key = kwargs.get("key", self.name)
 
-        if kwargs.get("case"):
-            if count == 1:
-                # use case if corresponding attribute is set (e.g. "accusative": "Riesen")
-                key = self.attributes.get(kwargs.get("case"), default=key)
-        # TODO: handle plural cases for "dative" and "genitive" (accusative plural = nominative plural)
+        gender = self.attributes.get("gender", default="n")  # Default to neutral
 
         # Retrieve custom attribute "plural"
         plural = self.attributes.get("plural", default=key)
 
-        gender = self.attributes.get("gender", default="n")  # Default to neutral
+        if kwargs.get("case") and self.attributes.has(kwargs.get("case")):
+            if count == 1:
+                # use case if corresponding attribute is set (e.g. "accusative": "Riesen")
+                key = self.attributes.get(kwargs.get("case"))
+        # TODO: handle plural cases for "dative" and "genitive" (accusative plural = nominative plural)
 
-        if kwargs.get("no_article") and count == 1:
-            if kwargs.get("return_string"):
-                return key
-            return key, key
+        # if kwargs.get("no_article") and count == 1:
+        #     if kwargs.get("return_string"):
+        #         return key
+        #     return key, key
 
         article = (
             {
@@ -145,7 +144,9 @@ class ObjectParent:
             case _:
                 num = count
 
-        plural = f"{num} {plural}"
+        # format strings with color formatting of the noun via get_display_name
+        singular = f"{article} {self.get_display_name(looker, key=key)}"
+        plural = f"{num} {self.get_display_name(looker, key=plural)}"
 
         if kwargs.get("return_string"):
             return singular if count == 1 else plural
@@ -240,9 +241,7 @@ class ObjectParent:
         for thingname, thinglist in sorted(grouped_things.items()):
             nthings = len(thinglist)
             thing = thinglist[0]
-            singular, plural = thing.get_numbered_name(
-                nthings, looker, key=thingname, case="accusative"
-            )
+            singular, plural = thing.get_numbered_name(nthings, looker, case="accusative")
             thing_names.append(singular if nthings == 1 else plural)
         thing_names = iter_to_str(
             thing_names, endsep=_("und")
