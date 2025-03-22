@@ -85,11 +85,9 @@ class CmdInventory(general.CmdInventory):
             from evennia.utils.ansi import raw as raw_ansi
 
             table = self.styled_table(border="header")
-            for key, desc, _ in utils.group_objects_by_key_and_desc(
-                items, caller=self.caller
-            ):
+            for key, desc, _ in utils.group_objects_by_key_and_desc(items, caller=self.caller):
                 table.add_row(
-                    f"|C{key}|n",
+                    f"{key}",
                     "{}|n".format(utils.crop(raw_ansi(desc or ""), width=50) or ""),
                 )
             string = f"|wIn deinem Inventar:\n{table}"
@@ -555,9 +553,7 @@ class CmdHelp(help.CmdHelp):
         title = f"|CHilfe für |w{topic}|n" if topic else "|rKeine Hilfe gefunden|n"
 
         if aliases:
-            aliases = " |C(aliases: {}|C)|n".format(
-                "|C,|n ".join(f"|w{ali}|n" for ali in aliases)
-            )
+            aliases = " |C(aliases: {}|C)|n".format("|C,|n ".join(f"|w{ali}|n" for ali in aliases))
         else:
             aliases = ""
 
@@ -566,8 +562,7 @@ class CmdHelp(help.CmdHelp):
         if subtopics:
             if click_topics:
                 subtopics = [
-                    f"|lchilfe {topic}/{subtop}|lt|w{topic}/{subtop}|n|le"
-                    for subtop in subtopics
+                    f"|lchilfe {topic}/{subtop}|lt|w{topic}/{subtop}|n|le" for subtop in subtopics
                 ]
             else:
                 subtopics = [f"|w{topic}/{subtop}|n" for subtop in subtopics]
@@ -652,9 +647,7 @@ class CmdHelp(help.CmdHelp):
 
                     # make the help topics clickable
                     if click_topics:
-                        entries = [
-                            f"|lchilfe {entry}|lt{entry}|le" for entry in entries
-                        ]
+                        entries = [f"|lchilfe {entry}|lt{entry}|le" for entry in entries]
 
                     # add the entries to the grid
                     grid.extend(entries)
@@ -677,9 +670,7 @@ class CmdHelp(help.CmdHelp):
 
                     # make the help topics clickable
                     if click_topics:
-                        entries = [
-                            f"|lchilfe {entry}|lt{entry}|le" for entry in entries
-                        ]
+                        entries = [f"|lchilfe {entry}|lt{entry}|le" for entry in entries]
 
                     # add the entries to the grid
                     grid.extend(entries)

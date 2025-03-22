@@ -1,7 +1,7 @@
-from . import characters
+from .characters import Character
 
 
-class NPC(characters.Character):
+class NPC(Character):
     def at_post_puppet(self, **kwargs):
         """
         Called just after puppeting has been completed and all
@@ -18,12 +18,14 @@ class NPC(characters.Character):
             puppeting this Object.
 
         """
-        self.msg("\nDu wirst zu |c{name}|n.\n".format(name=self.key))
+        self.msg(
+            "Dein Geist fährt in den Körper von {name}.".format(name=self.get_display_name(self))
+        )
         self.msg((self.at_look(self.location), {"type": "look"}), options=None)
 
         def message(obj, from_obj):
             obj.msg(
-                "{name} wird von {puppeteer} zum Leben erweckt.".format(
+                "Der Geist von {puppeteer} fährt in den Körper von {name}.".format(
                     name=self.get_display_name(obj), puppeteer=self.account.get_display_name(obj)
                 ),
                 from_obj=from_obj,
@@ -49,7 +51,9 @@ class NPC(characters.Character):
                 overriding the call (unused by default).
 
         """
-        account.msg("\nDu verlässt den Körper von |c{name}|n.\n".format(name=self.key))
+        account.msg(
+            "Du verlässt den Körper von {name}.\n".format(name=self.get_display_name(self))
+        )
         self.msg((self.at_look(self.location), {"type": "look"}), options=None)
 
         def message(obj, from_obj):
