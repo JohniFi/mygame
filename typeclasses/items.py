@@ -11,7 +11,5 @@ class Item(objects.Object):
 
     # worth of gold
     worth = AttributeProperty(default=0)
-    
+
     # TODO: enum item_type
- 
- 

@@ -32,6 +32,24 @@ class ObjectParent:
     # TODO: evaluate LANGUAGE_CODE and only overwrite methods if German (DE)
     # TODO: i18n of Strings from "mygame". Possibly add pullrequest to mark Strings here with _("...") so you don't need to overwrite get_display_things
 
+    def get_display_name(self, looker=None, **kwargs):
+        """
+        Displays the name of the object in a viewer-aware manner.
+
+        Args:
+            looker (DefaultObject): The object or account that is looking at or getting information
+                for this object.
+
+        Returns:
+            str: A name to display for this object. By default this returns the `.name` of the object.
+
+        Notes:
+            This function can be extended to change how object names appear to users in character,
+            but it does not change an object's keys or aliases when searching.
+
+        """
+        return f"|w{self.name}|n"
+
     def get_search_direct_match(self, searchdata, **kwargs):
         """
         This method is called by the search method to allow for direct
@@ -62,7 +80,7 @@ class ObjectParent:
         """
         Returns the object's name with correct pluralization and article.
 
-        looks up object attributes "plural", "gender", "case" 
+        looks up object attributes "plural", "gender", "case"
         "plural": <plural name of object>
         "gender": ("m", "f", "n")
         at the moment only case supportet: "accusative": <accusative singular name of object>
@@ -70,9 +88,7 @@ class ObjectParent:
         """
         key = kwargs.get("key", self.get_display_name(looker))
         raw_key = self.name
-        key = ansi.ANSIString(
-            key
-        )  # this is needed to allow inflection of colored names
+        key = ansi.ANSIString(key)  # this is needed to allow inflection of colored names
 
         if kwargs.get("case"):
             if count == 1:
@@ -169,9 +185,7 @@ class ObjectParent:
             names.sort(key=lambda name: sort_index.get(name, end_pos))
             return names
 
-        exits = self.filter_visible(
-            self.contents_get(content_type="exit"), looker, **kwargs
-        )
+        exits = self.filter_visible(self.contents_get(content_type="exit"), looker, **kwargs)
         exit_names = (exi.get_display_name(looker, **kwargs) for exi in exits)
         exit_names = iter_to_str(
             _sort_exit_names(exit_names), endsep=_("und")
@@ -201,9 +215,7 @@ class ObjectParent:
         )
 
         return (
-            _("|wCharaktere:|n {c}").format(c=character_names)
-            if character_names
-            else ""
+            _("|wCharaktere:|n {c}").format(c=character_names) if character_names else ""
         )  # TODO: Pull-Request for i18
 
     def get_display_things(self, looker, **kwargs):
@@ -218,9 +230,7 @@ class ObjectParent:
 
         """
         # sort and handle same-named things
-        things = self.filter_visible(
-            self.contents_get(content_type="object"), looker, **kwargs
-        )
+        things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
 
         grouped_things = defaultdict(list)
         for thing in things:
@@ -245,9 +255,7 @@ class ObjectParent:
             else ""
         )
 
-    def announce_move_from(
-        self, destination, msg=None, mapping=None, move_type="move", **kwargs
-    ):
+    def announce_move_from(self, destination, msg=None, mapping=None, move_type="move", **kwargs):
         """
         Called if the move is to be announced. This is
         called while we are still standing in the old
@@ -287,9 +295,7 @@ class ObjectParent:
 
         location = self.location
         exits = [
-            o
-            for o in location.contents
-            if o.location is location and o.destination is destination
+            o for o in location.contents if o.location is location and o.destination is destination
         ]
         if not mapping:
             mapping = {}
