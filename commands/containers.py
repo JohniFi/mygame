@@ -116,18 +116,19 @@ class CmdContainerGet(CmdGet):
         for obj in objs:
             # check the locks
             if not obj.access(caller, "get"):
-                # calling possible at_pre_get_from hook on location
-                if hasattr(location, "at_pre_get_from") and not location.at_pre_get_from(
-                    caller, obj
-                ):
-                    self.msg("Das kannst du nicht bekommen.")
-                    return
-
                 if obj.db.get_err_msg:
                     self.msg(obj.db.get_err_msg)
                 else:
                     self.msg("Das kannst du nicht bekommen.")
                 return
+            
+            # calling possible at_pre_get_from hook on location
+            if hasattr(location, "at_pre_get_from") and not location.at_pre_get_from(
+                caller, obj
+            ):
+                self.msg("Das kannst du nicht da raus bekommen.")
+                return
+                
             # calling at_pre_get hook method
             if not obj.at_pre_get(caller):
                 return
@@ -189,23 +190,18 @@ class CmdPut(NumberedTargetCommand):
         "stell",
     ]
     rhs_split = ("=", " in ", " auf ")
-
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
     def func(self):
-
-        self.get_command_info()
 
         caller = self.caller
         if not self.args:
             self.msg("Tue was worein?")
             return
 
-        # not child of CmdGet anymore
-        # if not self.rhs:
-        #     super().func()
-        #     return
+        if not self.rhs:
+            return
 
         container = caller.search(self.rhs)
         if not container:
@@ -216,7 +212,7 @@ class CmdPut(NumberedTargetCommand):
         objs = caller.search(
             self.lhs,
             location=caller,
-            nofound_string=f"Du hast '{self.args}' nicht in deinem Inventar.",
+            nofound_string=f"Du hast '{self.lhs}' nicht in deinem Inventar.",
             # multimatch_string=f"Du trägst mehr als ein {self.args}:",
             stacked=self.number,
         )
@@ -243,7 +239,7 @@ class CmdPut(NumberedTargetCommand):
                 return
             # Call the container's possible at_pre_put_in method.
             if hasattr(container, "at_pre_put_in") and not container.at_pre_put_in(caller, obj):
-                self.msg("You can't put that there.")
+                self.msg("Das kannst du nicht da rein tun.")
                 return
 
         # do the actual putting
@@ -275,3 +271,6 @@ class CmdPut(NumberedTargetCommand):
             receiver.msg(f"{caller} tut {obj_name} in {container_name}.")
 
         caller.msg(f"Du tust {obj_name} in {container_name}.")
+
+
+# TODO: CmdSetOwner
