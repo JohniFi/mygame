@@ -4,10 +4,10 @@ APFEL = {
     "typeclass": "typeclasses.items.Item",
     "key": "Apfel",
     "plural": "Äpfel",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Ein ganz normaler Apfel.",
     "weight": 0.1,
-    "tags": [("apfel", "crafting_material")],
+    "tags": [("apfel", "crafting_material"), ("m", "gender")],
 }
 
 HOLZ = {
@@ -36,10 +36,10 @@ STEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Stein",
     "plural": "Steine",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Ein mittelgroßer Stein.",
     "weight": 4,
-    "tags": [("stein", "crafting_material")],
+    "tags": [("stein", "crafting_material"), ("m", "gender")],
 }
 
 HARTHOLZ = {
@@ -73,12 +73,12 @@ REET = {
 
 LEHM = {
     "typeclass": "typeclasses.items.Item",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Ein weicher Klumpen Lehm. Aus ihm lassen sich viele verschiedene Dinge formen — also hauche ihm Leben ein!",
     "key": "Lehmklumpen",
     "aliases": ["Lehm"],
     "weight": 0.5,
-    "tags": [("lehm", "crafting_material")],
+    "tags": [("lehm", "crafting_material"), ("m", "gender")],
 }
 
 FEUERHOLZ = {
@@ -93,12 +93,12 @@ FEUERHOLZ = {
 KOHLE = {
     "typeclass": "typeclasses.items.Item",
     "key": "Kohle",
-    "gender": "f",
+    # "gender": "f",
     "plural": "Kohlen",
     "desc": "Dieser schwarze Klumpen lässt ein entzündetes Feuer viel länger und heißer brennen",
     "weight": 3,
     "fuel": 60 * 60,
-    "tags": [("kohle", "crafting_material")],
+    "tags": [("kohle", "crafting_material"), ("f", "gender")],
 }
 
 LEDER = {
@@ -132,7 +132,7 @@ STOFF = {
     "plural": "Stoffe",
     "desc": "Dieser Stoff fühlt sich rau an.",
     "weight": 0.5,
-    "tags": [("stoff", "crafting_material")],
+    "tags": [("stoff", "crafting_material"), ("m", "gender")],
 }
 
 WEICHER_STOFF = {
@@ -140,81 +140,81 @@ WEICHER_STOFF = {
     "key": "weicher Stoff",
     "plural": "weiche Stoffe",
     "accusative": "weichen Stoff",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Dieser Stoff ist weich. Er ist gut für Kleidung.",
     "weight": 0.75,
-    "tags": [("weicher_stoff", "crafting_material")],
+    "tags": [("weicher_stoff", "crafting_material"), ("m", "gender")],
 }
 
 MAUERSTEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Mauerstein",
     "plural": "Mauersteine",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Ein großer, runder Stein, der gut für Mauern ist",
     "weight": 9,
-    "tags": [("mauerstein", "crafting_material")],
+    "tags": [("mauerstein", "crafting_material"), ("m", "gender")],
 }
 
 ZIEGELSTEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Ziegelstein",
     "plural": "Ziegelsteine",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Ein rechteckiger Stein. Gut für Mauern oder auch als Dachziegel nützlich.",
     "weight": 7,
-    "tags": [("ziegelstein", "crafting_material")],
+    "tags": [("ziegelstein", "crafting_material"), ("m", "gender")],
 }
 
 TIEFENSTEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Tiefenstein",
-    "gender": "m",
+    # "gender": "m",
     "plural": "Tiefensteine",
     "desc": "Ein kleiner, aber schwerer schwarzer Stein.",
     "weight": 10,
-    "tags": [("tiefenstein", "crafting_material")],
+    "tags": [("tiefenstein", "crafting_material"), ("m", "gender")],
 }
 
 EDELSTEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Edelstein",
-    "gender": "m",
+    # "gender": "m",
     "plural": "Edelsteine",
     "desc": "Dieser schöne Stein funkelt und glänzt im Licht. Er ist viel wert!",
     "weight": 7,
-    "tags": [("edelstein", "crafting_material")],
+    "tags": [("edelstein", "crafting_material"), ("m", "gender")],
 }
 
 MAGIESTEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Magiestein",
-    "gender": "m",
+    # "gender": "m",
     "plural": "Magiesteine",
     "desc": "Dieser orangefarbene Edelstein leuchtet im Dunkeln. Bei Berührungen zittert er stark. Er ist bei Händlern sehr begehrt, ist aber auch als Werkstoff wertvoll.",
     "weight": 5,
-    "tags": [("magiestein", "crafting_material")],
+    "tags": [("magiestein", "crafting_material"), ("m", "gender")],
 }
 
 MAGIESTEIN_2 = {
     "typeclass": "typeclasses.items.Item",
     "key": "Magiestein LV2",
-    "gender": "m",
+    # "gender": "m",
     "plural": "Magiesteine LV2",
     "desc": "Dieser violettfarbene Edelstein leuchtet für Magier hell, zittert in deren Händen und sie können ihn durch Wände sehen. In ihm befindet sich konzentrierte Magie",
     "weight": 6,
-    "tags": [("magiestein_2", "crafting_material")],
+    "tags": [("magiestein_2", "crafting_material"), ("m", "gender")],
 }
 
 DIAMANT = {
     "typeclass": "typeclasses.items.Item",
     "key": "Diamant",
-    "gender": "m",
+    # "gender": "m",
     "plural": "Diamanten",
     "accusative": "Diamanten",
     "desc": "Dieser weiß-hellblaue Edelstein ist von unfassbarem Wert.",
     "weight": 10,
-    "tags": [("diamant", "crafting_material")],
+    "tags": [("diamant", "crafting_material"), ("m", "gender")],
 }
 
 # TOOLS "crafting_tool"
@@ -222,17 +222,17 @@ DIAMANT = {
 KESSEL = {
     "typeclass": "typeclasses.items.Item",
     "key": "Kessel",
-    "gender": "m",
+    # "gender": "m",
     "desc": "In diesem Kessel lassen sich Suppen und ähnliches zubereiten. Er ist beim Kochen unentbehrlich.",
     "weight": 3,
-    "tags": [("kessel", "crafting_tool")],
+    "tags": [("kessel", "crafting_tool"), ("m", "gender")],
 }
 
 FEUERSTEIN = {
     "typeclass": "typeclasses.items.Item",
     "key": "Feuerstein",
-    "gender": "m",
+    # "gender": "m",
     "desc": "Dieser schwarze Stein eignet sich zum Feuermachen.",
     "weight": 1,
-    "tags": [("feuerstein", "crafting_tool")],
+    "tags": [("feuerstein", "crafting_tool"), ("m", "gender")],
 }

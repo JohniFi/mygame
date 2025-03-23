@@ -11,7 +11,7 @@ with a location in the game world (like Characters, Rooms, Exits).
 from collections import defaultdict
 from django.utils.translation import gettext as _
 from evennia.objects.objects import DefaultObject
-from evennia.utils import ansi
+from evennia.typeclasses.attributes import AttributeProperty
 from evennia.utils.utils import iter_to_str, make_iter
 
 
@@ -81,72 +81,112 @@ class ObjectParent:
         """
         Returns the object's name with correct pluralization and article.
 
-        looks up object attributes "plural", "gender", "case"
+        looks up object tag "gender" and attributes "plural", and "case"
+        tag_category: "gender"; tags: ("m", "f", "n")
         "plural": <plural name of object>
-        "gender": ("m", "f", "n")
         at the moment only case supportet: "accusative": <accusative singular name of object>
         default case "nominative" is just the key
-        """
-        key = kwargs.get("key", self.name)
 
-        gender = self.attributes.get("gender", default="n")  # Default to neutral
+        definite_article=True for definite article. Else default indefinite article
+        """
+
+        # TODO: add object tag "unique" that always leads to definit article
+
+        key = kwargs.get("key", self.name)
+        article_type = "def" if kwargs.get("definite_article") else "indef"
+        case = kwargs.get("case", "nominative")
+
+        # gender = self.attributes.get("gender", default="n")  # Default to neutral
+        if self.tags.has(category="gender"):
+            gender = self.tags.get(category="gender")[0]
+        else:
+            gender = "n"
 
         # Retrieve custom attribute "plural"
         plural = self.attributes.get("plural", default=key)
 
-        if kwargs.get("case") and self.attributes.has(kwargs.get("case")):
-            if count == 1:
-                # use case if corresponding attribute is set (e.g. "accusative": "Riesen")
-                key = self.attributes.get(kwargs.get("case"))
+        if self.attributes.has(case):
+            if case == "accusative" and count == 1:
+                # use accusative for singular
+                key = self.attributes.get(case)
         # TODO: handle plural cases for "dative" and "genitive" (accusative plural = nominative plural)
 
-        # if kwargs.get("no_article") and count == 1:
-        #     if kwargs.get("return_string"):
-        #         return key
-        #     return key, key
+        if kwargs.get("no_article") and count == 1:
+            key = self.get_display_name(looker, key=key)
+            plural = self.get_display_name(looker, key=plural)
+            if kwargs.get("return_string"):
+                return key if count == 1 else plural
+            return key, plural
 
-        article = (
-            {
-                "nominative": {"m": "ein", "f": "eine", "n": "ein"},
-                "accusative": {"m": "einen", "f": "eine", "n": "ein"},
-                "dative": {"m": "einem", "f": "einer", "n": "einem"},
-                "genitive": {"m": "eines", "f": "einer", "n": "eines"},
-            }
-            .get(kwargs.get("case", "nominative"))
-            .get(gender, "ein")
+        articles = {
+            "nominative": {
+                "m": {"indef": "ein", "def": "der"},
+                "f": {"indef": "eine", "def": "die"},
+                "n": {"indef": "ein", "def": "das"},
+                "pl": {"indef": "", "def": "die "},
+            },
+            "accusative": {
+                "m": {"indef": "einen", "def": "den"},
+                "f": {"indef": "eine", "def": "die"},
+                "n": {"indef": "ein", "def": "das"},
+                "pl": {"indef": "", "def": "die "},
+            },
+            "dative": {
+                "m": {"indef": "einem", "def": "dem"},
+                "f": {"indef": "einer", "def": "der"},
+                "n": {"indef": "einem", "def": "dem"},
+                "pl": {"indef": "", "def": "den "},
+            },
+            "genitive": {
+                "m": {"indef": "eines", "def": "des"},
+                "f": {"indef": "einer", "def": "der"},
+                "n": {"indef": "eines", "def": "des"},
+                "pl": {"indef": "", "def": "der "},
+            },
+        }
+
+        article_singular = (
+            articles.get(case, "nominative").get(gender, "n").get(article_type, "ein")
         )
 
-        singular = f"{article} {key}"
+        num = ""
+        # if count == 0:
+        #     article_plural = "k" + articles.get(case, "nominative").get(gender, "n").get("indef")
+        #     # ein -> kein, eine -> keine TODO: not working because it adds plural noun
+        if count == 1:
+            article_plural = article_singular
+        else:
+            match count:
+                case count if count in range(2, 12 + 1):
+                    num = {
+                        2: "zwei",
+                        3: "drei",
+                        4: "vier",
+                        5: "fünf",
+                        6: "sechs",
+                        7: "sieben",
+                        8: "acht",
+                        9: "neun",
+                        10: "zehn",
+                        11: "elf",
+                        12: "zwölf",
+                    }.get(count)
+                case _:
+                    num = count
+
+            article_plural = "{}{}".format(
+                articles.get(case, "nominative").get("pl").get(article_type, "die"), num
+            )
 
         # update aliases
+        # plural (without article)
         self.aliases.add(plural, category=self.plural_category)
-        self.aliases.add(singular, category=self.plural_category)
-
-        match count:
-            case 0:
-                num = "k" + article  # ein -> kein, eine -> keine
-            case 1:
-                num = article
-            case count if count in range(2, 12 + 1):
-                num = {
-                    2: "zwei",
-                    3: "drei",
-                    4: "vier",
-                    5: "fünf",
-                    6: "sechs",
-                    7: "sieben",
-                    8: "acht",
-                    9: "neun",
-                    10: "zehn",
-                    11: "elf",
-                    12: "zwölf",
-                }.get(count)
-            case _:
-                num = count
+        # singular (with article)
+        self.aliases.add(f"{article_singular} {key}", category=self.plural_category)
 
         # format strings with color formatting of the noun via get_display_name
-        singular = f"{article} {self.get_display_name(looker, key=key)}"
-        plural = f"{num} {self.get_display_name(looker, key=plural)}"
+        singular = f"{article_singular} {self.get_display_name(looker, key=key)}"
+        plural = f"{article_plural} {self.get_display_name(looker, key=plural)}"
 
         if kwargs.get("return_string"):
             return singular if count == 1 else plural
