@@ -236,3 +236,14 @@ FEUERSTEIN = {
     "weight": 1,
     "tags": [("feuerstein", "crafting_tool"), ("m", "gender")],
 }
+
+# CONTAINERS
+
+TRUHE = {
+    "typeclass": "typeclasses.objects.Container",
+    "key": "Truhe",
+    "desc": "Eine gewöhnliche Holztruhe",
+    "weight": 100,
+    "capacity": 10,
+    "tags": [("f", "gender")],
+}

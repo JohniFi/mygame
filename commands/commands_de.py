@@ -175,9 +175,9 @@ class CmdGet(general.CmdGet):
         contents = [obj for obj in contents if obj not in exclude]
 
         for receiver in contents:
-            receiver.msg(f"{caller} erhält {obj_name}.")
+            receiver.msg(f"{caller} nimmt sich {obj_name}.")
 
-        caller.msg(f"Du erhältst {obj_name}.")
+        caller.msg(f"Du nimmst dir {obj_name}.")
 
 
 class CmdDrop(general.CmdDrop):
@@ -235,6 +235,7 @@ class CmdDrop(general.CmdDrop):
         for obj in objs:
             # Call the object's at_pre_drop() method.
             if not obj.at_pre_drop(caller):
+                self.msg(f"Das kannst du nicht ablegen: {obj.get_display_name(caller)}")
                 return
 
         # do the actual dropping
@@ -247,7 +248,7 @@ class CmdDrop(general.CmdDrop):
 
         if not moved:
             # none of the objects were successfully moved
-            self.msg("Das kann nicht abgelegt werden.")
+            self.msg("Es konnte nichts abgelegt werden.")
         else:
             obj_name = moved[0].get_numbered_name(
                 len(moved), caller, return_string=True, case="accusative"

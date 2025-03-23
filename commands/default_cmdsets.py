@@ -20,6 +20,7 @@ from evennia.commands.default import (
 )
 from commands import commands_de
 from commands import commands_lock
+from .containers import ContainerCmdSet
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -66,6 +67,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
         self.add(commands_de.CmdHelp())
 
+        self.add(ContainerCmdSet)
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
