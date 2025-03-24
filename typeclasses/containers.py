@@ -1,8 +1,10 @@
-from collections import defaultdict
+from evennia.commands.cmdset import CmdSet
 from evennia.typeclasses.attributes import AttributeProperty
-from evennia.utils.utils import iter_to_str
-from commands.ownable import CmdSetOwnable
+from evennia.utils.utils import class_from_module
 from .objects import Object
+from django.conf import settings
+
+COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
 
 class Container(Object):
@@ -24,11 +26,16 @@ class Container(Object):
         By default, a lock type not being explicitly set will fail access checks, so objects without
         the new "get_from" access lock will fail the access checks and continue behaving as
         non-container objects.
-        Edit: Two way: "get_from" and "put_in"
+        Edit: "look_into", "get_from" and "put_in"
         """
         super().at_object_creation()
+
+        self.cmdset.add_default(CmdSetOwnable)
+
+        self.locks.add("look_into:true()")
         self.locks.add("get_from:true()")
         self.locks.add("put_in:true()")
+        self.locks.add("call:perm(Builder)")  # CmdDemise
 
     def at_pre_get_from(self, getter, target, **kwargs):
         """
@@ -72,20 +79,11 @@ class Container(Object):
 
         return True
 
-
-class OwnedContainer(Container):
-
-    # This defines how many objects the container can hold.
-    owner = AttributeProperty(default=None)
-
-    def at_object_creation(self):
-        super().at_object_creation()
-
-        self.cmdset.add_default(CmdSetOwnable)
-
     def get_display_things(self, looker, **kwargs):
         """
         Get the 'things' component of the object description. Called by `return_appearance`.
+
+        Overwrite: Added lock check "look_into".
 
         Args:
             looker (DefaultObject): Object doing the looking.
@@ -94,51 +92,51 @@ class OwnedContainer(Container):
             str: The things display data.
 
         """
-        if self.owner and looker != self.owner:
-            return (
-                f"Das gehört {self.owner.get_display_name(looker)}. Du kannst nicht hineinsehen."
-            )
 
-        # return (
-        #     _("|wDu siehst:|n {thing_names}").format(
-        #         thing_names=thing_names
-        #     )  # TODO: Pull-Request for i18n
-        #     if thing_names
-        #     else ""
-        # )
+        if not self.access(looker, "look_into"):
+            return f"Das gehört dir nicht. Du kannst nicht hineinsehen."
+        else:
+            return super().get_display_things(looker, **kwargs)
 
-        # sort and handle same-named things
-        things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
 
-        grouped_things = defaultdict(list)
-        for thing in things:
-            grouped_things[thing.get_display_name(looker, **kwargs)].append(thing)
+class CmdDemise(COMMAND_DEFAULT_CLASS):
+    """
+    Bestimme Besitzer
 
-        thing_names = []
-        for thingname, thinglist in sorted(grouped_things.items()):
-            nthings = len(thinglist)
-            thing = thinglist[0]
-            singular, plural = thing.get_numbered_name(nthings, looker, case="accusative")
-            thing_names.append(singular if nthings == 1 else plural)
-        thing_names = iter_to_str(
-            thing_names, endsep="und"
-        )  # TODO: Pull-Request for `endsep` i18n
-        return (
-            "|wDu siehst:|n {thing_names}".format(
-                thing_names=thing_names
-            )  # TODO: Pull-Request for i18n
-            if thing_names
-            else ""
+    Benutzung:
+        zuweisen <charakter>
+
+    Überträgt die Eigentümerschaft diese Objektes auf jemanden.
+    (Setzt locks für hineinschauen, herausnehmen und hineinlegen)
+    """
+
+    key = "zuweisen"
+    aliases = ["übertrage", "übertragen"]
+    # locks = "cmd:perm(Builder)"
+    arg_regex = r"\s|$"
+
+    def func(self):
+
+        if not self.args:
+            self.caller.msg("an wen?")
+            return
+
+        new_owner = self.caller.search(self.args, global_search=True)
+
+        if not new_owner:
+            self.caller.msg(f"Kann {self.args} nicht finden.")
+            return
+
+        self.obj.locks.add(f"look_into: perm(Builder) or id({new_owner.id})")
+        self.obj.locks.add(f"get_from: perm(Admin) or id({new_owner.id})")
+        self.obj.locks.add(f"put_in: perm(Builder) or id({new_owner.id})")
+        self.obj.locks.add(f"call: perm(Admin) or id({new_owner.id})")
+
+        self.caller.msg(
+            f"Eigentümerschaft von {self.obj.get_display_name(self.caller)} auf {new_owner.get_display_name(self.caller)} übertragen."
         )
 
-    def at_pre_get_from(self, getter, target, **kwargs):
-        if self.owner and getter != self.owner:
-            return False
-        else:
-            return super().at_pre_get_from(getter, target, **kwargs)
 
-    def at_pre_put_in(self, putter, target, **kwargs):
-        if self.owner and putter != self.owner:
-            return False
-        else:
-            return super().at_pre_put_in(putter, target, **kwargs)
+class CmdSetOwnable(CmdSet):
+    def at_cmdset_creation(self):
+        self.add(CmdDemise)

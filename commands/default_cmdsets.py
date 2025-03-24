@@ -67,6 +67,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
         self.add(commands_de.CmdHelp())
 
+        # Container commands
         self.add(ContainerCmdSet)
 
 

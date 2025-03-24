@@ -247,12 +247,3 @@ TRUHE = {
     "capacity": 10,
     "tags": [("f", "gender")],
 }
-
-PRIVATE_TRUHE = {
-    "typeclass": "typeclasses.containers.OwnedContainer",
-    "key": "private Truhe",
-    "desc": "Eine gewöhnliche Holztruhe",
-    "weight": 100,
-    "capacity": 10,
-    "tags": [("f", "gender")],
-}

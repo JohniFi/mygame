@@ -21,17 +21,6 @@ class ContainerCmdSet(CmdSet):
 
 
 class CmdContainerLook(CmdLook):
-    """
-    look at location or object
-
-    Usage:
-      look
-      look <obj>
-      look <obj> in <container>
-      look *<account>
-
-    Observes your location or objects in your vicinity.
-    """
 
     rhs_split = (" in ",)
 
@@ -53,6 +42,14 @@ class CmdContainerLook(CmdLook):
                 # we are looking in something, find that first
                 container = caller.search(self.rhs)
                 if not container:
+                    return
+                # check access lock
+                if not container.access(caller, "look_into"):
+                    # supports custom error messages on individual containers
+                    if container.db.look_into_err_msg:
+                        self.msg(container.db.look_into_err_msg)
+                    else:
+                        self.msg("Du kannst da nicht hineinsehen.")
                     return
 
             target = caller.search(self.lhs, location=container)
@@ -121,14 +118,14 @@ class CmdContainerGet(CmdGet):
                 else:
                     self.msg("Das kannst du nicht bekommen.")
                 return
-            
+
             # calling possible at_pre_get_from hook on location
             if hasattr(location, "at_pre_get_from") and not location.at_pre_get_from(
                 caller, obj
             ):
                 self.msg("Das kannst du nicht da raus bekommen.")
                 return
-                
+
             # calling at_pre_get hook method
             if not obj.at_pre_get(caller):
                 return
@@ -159,10 +156,13 @@ class CmdContainerGet(CmdGet):
         )
 
         for receiver in contents:
+            caller_name = caller.get_display_name(receiver)
             if location == caller.location:
-                receiver.msg(f"{caller} nimmt sich {obj_name}.")
+                receiver.msg(f"{caller_name} nimmt sich {obj_name}.")
             else:
-                receiver.msg(f"{caller} nimmt sich {obj_name} aus {container_name}.")
+                receiver.msg(
+                    f"{caller_name} nimmt sich {obj_name} aus {container_name}."
+                )
 
         if location == caller.location:
             caller.msg(f"Du nimmst dir {obj_name}.")
@@ -177,8 +177,8 @@ class CmdPut(NumberedTargetCommand):
     Benutzung:
       lege <obj> in <container>
 
-    Lets you put an object from your inventory into another
-    object in the vicinity.
+    Lässt dich ein Objekt aus deinem inventar in/auf ein anderes Objekt
+    in deiner Umgebung legen/stellen/stecken.
     """
 
     key = "lege"
@@ -238,7 +238,9 @@ class CmdPut(NumberedTargetCommand):
                 self.msg(f"Das kannst du nicht ablegen: {obj.get_display_name(caller)}")
                 return
             # Call the container's possible at_pre_put_in method.
-            if hasattr(container, "at_pre_put_in") and not container.at_pre_put_in(caller, obj):
+            if hasattr(container, "at_pre_put_in") and not container.at_pre_put_in(
+                caller, obj
+            ):
                 self.msg("Das kannst du nicht da rein tun.")
                 return
 
@@ -268,7 +270,8 @@ class CmdPut(NumberedTargetCommand):
         )
 
         for receiver in contents:
-            receiver.msg(f"{caller} tut {obj_name} in {container_name}.")
+            caller_name = caller.get_display_name(receiver)
+            receiver.msg(f"{caller_name} tut {obj_name} in {container_name}.")
 
         caller.msg(f"Du tust {obj_name} in {container_name}.")
 
