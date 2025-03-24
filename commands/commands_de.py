@@ -85,7 +85,9 @@ class CmdInventory(general.CmdInventory):
             from evennia.utils.ansi import raw as raw_ansi
 
             table = self.styled_table(border="header")
-            for key, desc, _ in utils.group_objects_by_key_and_desc(items, caller=self.caller):
+            for key, desc, _ in utils.group_objects_by_key_and_desc(
+                items, caller=self.caller
+            ):
                 table.add_row(
                     f"{key}",
                     "{}|n".format(utils.crop(raw_ansi(desc or ""), width=50) or ""),
@@ -269,11 +271,16 @@ class CmdGive(general.CmdGive):
     """
     übergebe jemandem etwas
 
-    Usage:
-      gib <inventar-obj> = <ziel>
-      übergebe <inventar-obj> an <ziel>
+    Benutzung:
+      gib <inventar-obj> an <ziel>
+      schenke <inventar-obj> = <ziel>
+      übergebe/eigentum <obj> an <ziel>
+
+    Switch:
+      eigentum - überträgt die Eigentümerschaft des Objektes statt das Objekt selbst.
 
     Überträgt ein Item aus deinem Inventar in das Inventar eines Anderen.
+    Oder überträgt die Eigentümerschaft eines Objektes in deiner Umgebung auf jemanden.
     """
 
     key = "gib"
@@ -290,22 +297,70 @@ class CmdGive(general.CmdGive):
         "übertrage",
         "übertragen",
     ]
+    switch_options = ("eigentum",)
+
     rhs_split = ("=", " zu ", " an ")  # Prefer = delimiter, but allow " to " usage.
     locks = "cmd:all()"
-    arg_regex = r"\s|$"
+    arg_regex = r"^[ /]|\n|$"
 
     def func(self):
         """Implement give"""
 
         caller = self.caller
         if not self.args or not self.rhs:
-            caller.msg("Benutzung: gib <inventar-obj> = <ziel>")
+            caller.msg("Benutzung: gib <inventar-obj> an <ziel>")
             return
+
+        # With SWITCH '/eigentum'
+        if "eigentum" in self.switches:
+            # find object
+            obj = caller.search(
+                self.lhs, nofound_string=f"Kann '{self.lhs}' nicht finden."
+            )
+            if not obj:
+                return
+
+            # find target (new owner)
+            target = caller.search(
+                self.rhs,
+                global_search=True,
+                nofound_string=f"Kann {self.rhs} nicht finden.",
+            )
+            if not target:
+                return
+
+            # check if obj can set_owner()
+            if not hasattr(obj, "set_owner"):
+                caller.msg(
+                    f"Kann Eigentümerschaft von {obj.get_display_name(caller)} nicht übertragen."
+                )
+                return
+
+            # check access lock
+            if not obj.access(caller, "set_owner"):
+                # supports custom error messages on individual containers
+                if obj.db.put_err_msg:
+                    self.msg(obj.db.put_err_msg)
+                else:
+                    self.msg(
+                        f"Du kannst die Eigentümerschaft von {obj.get_display_name(caller)} nicht übertragen."
+                    )
+                return
+
+            # net new owner
+            obj.set_owner(caller, target)
+            caller.msg(
+                f"Eigentümerschaft von {obj.get_display_name(caller)} auf {target.get_display_name(caller)} übertragen."
+            )
+            return
+
+        # Without SWITCH
+
         # find the thing(s) to give away
         to_give = caller.search(
             self.lhs,
             location=caller,
-            nofound_string=f"Du hast '{self.args}' nicht in deinem Inventar.",
+            nofound_string=f"Du hast '{self.lhs}' nicht in deinem Inventar.",
             # multimatch_string=f"You carry more than one {self.lhs}:",
             stacked=self.number,
         )
@@ -554,7 +609,9 @@ class CmdHelp(help.CmdHelp):
         title = f"|CHilfe für |w{topic}|n" if topic else "|rKeine Hilfe gefunden|n"
 
         if aliases:
-            aliases = " |C(aliases: {}|C)|n".format("|C,|n ".join(f"|w{ali}|n" for ali in aliases))
+            aliases = " |C(aliases: {}|C)|n".format(
+                "|C,|n ".join(f"|w{ali}|n" for ali in aliases)
+            )
         else:
             aliases = ""
 
@@ -563,7 +620,8 @@ class CmdHelp(help.CmdHelp):
         if subtopics:
             if click_topics:
                 subtopics = [
-                    f"|lchilfe {topic}/{subtop}|lt|w{topic}/{subtop}|n|le" for subtop in subtopics
+                    f"|lchilfe {topic}/{subtop}|lt|w{topic}/{subtop}|n|le"
+                    for subtop in subtopics
                 ]
             else:
                 subtopics = [f"|w{topic}/{subtop}|n" for subtop in subtopics]
@@ -648,7 +706,9 @@ class CmdHelp(help.CmdHelp):
 
                     # make the help topics clickable
                     if click_topics:
-                        entries = [f"|lchilfe {entry}|lt{entry}|le" for entry in entries]
+                        entries = [
+                            f"|lchilfe {entry}|lt{entry}|le" for entry in entries
+                        ]
 
                     # add the entries to the grid
                     grid.extend(entries)
@@ -671,7 +731,9 @@ class CmdHelp(help.CmdHelp):
 
                     # make the help topics clickable
                     if click_topics:
-                        entries = [f"|lchilfe {entry}|lt{entry}|le" for entry in entries]
+                        entries = [
+                            f"|lchilfe {entry}|lt{entry}|le" for entry in entries
+                        ]
 
                     # add the entries to the grid
                     grid.extend(entries)

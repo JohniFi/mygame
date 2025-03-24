@@ -1,13 +1,14 @@
 from evennia.commands.cmdset import CmdSet
 from evennia.typeclasses.attributes import AttributeProperty
 from evennia.utils.utils import class_from_module
+from .ownable import Ownable
 from .objects import Object
 from django.conf import settings
 
 COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
 
-class Container(Object):
+class Container(Ownable, Object):
     """
     (based on ContribContainer)
     A type of Object which can be used as a container.
@@ -30,12 +31,10 @@ class Container(Object):
         """
         super().at_object_creation()
 
-        self.cmdset.add_default(CmdSetOwnable)
-
         self.locks.add("look_into:true()")
         self.locks.add("get_from:true()")
         self.locks.add("put_in:true()")
-        self.locks.add("call:perm(Builder)")  # CmdDemise
+        self.locks.add("set_owner:perm(Builder)")  # CmdDemise
 
     def at_pre_get_from(self, getter, target, **kwargs):
         """
@@ -98,57 +97,10 @@ class Container(Object):
         else:
             return super().get_display_things(looker, **kwargs)
 
+    # from class Ownable
+    def set_owner(self, setter, target, **kwargs):
+        self.locks.add(f"look_into: perm(Builder) or id({target.id})")
+        self.locks.add(f"get_from: perm(Admin) or id({target.id})")
+        self.locks.add(f"put_in: perm(Builder) or id({target.id})")
+        self.locks.add(f"set_owner: perm(Builder) or id({target.id})")
 
-class CmdDemise(COMMAND_DEFAULT_CLASS):
-    """
-    Bestimme Besitzer
-
-    Benutzung:
-        zuweisen <obj> an <neuer_besitzer>
-
-    Überträgt die Eigentümerschaft diese Objektes auf jemanden.
-    (Setzt locks für hineinschauen, herausnehmen und hineinlegen)
-    """
-
-    #FIXME: Multiple matches on command if more ownable objects at location
-
-    key = "zuweisen"
-    aliases = ["übertrage", "übertragen"]
-    rhs_split = ("=", " auf ", " an ")  # Prefer = delimiter, but allow " to " usage.
-    arg_regex = r"\s|$"
-
-    def func(self):
-
-        caller = self.caller
-
-        if not self.args or not self.rhs:
-            caller.msg("Benutzung: zuweisen <obj> an <charakter>")
-            return
-        
-        # find object
-        obj = self.caller.search(self.lhs)
-        if not obj:
-            return
-        if obj != self.obj:
-            self.caller.msg("Das kannst du nicht jemandem zuweisen.")
-            return
-
-        # find new owner
-        new_owner = caller.search(self.rhs, global_search=True)
-        if not new_owner:
-            caller.msg(f"Kann {self.rhs} nicht finden.")
-            return
-
-        self.obj.locks.add(f"look_into: perm(Builder) or id({new_owner.id})")
-        self.obj.locks.add(f"get_from: perm(Admin) or id({new_owner.id})")
-        self.obj.locks.add(f"put_in: perm(Builder) or id({new_owner.id})")
-        self.obj.locks.add(f"call: perm(Admin) or id({new_owner.id})")
-
-        self.caller.msg(
-            f"Eigentümerschaft von {self.obj.get_display_name(caller)} auf {new_owner.get_display_name(caller)} übertragen."
-        )
-
-
-class CmdSetOwnable(CmdSet):
-    def at_cmdset_creation(self):
-        self.add(CmdDemise)
