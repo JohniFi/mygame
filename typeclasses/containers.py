@@ -104,27 +104,39 @@ class CmdDemise(COMMAND_DEFAULT_CLASS):
     Bestimme Besitzer
 
     Benutzung:
-        zuweisen <charakter>
+        zuweisen <obj> an <neuer_besitzer>
 
     Überträgt die Eigentümerschaft diese Objektes auf jemanden.
     (Setzt locks für hineinschauen, herausnehmen und hineinlegen)
     """
 
+    #FIXME: Multiple matches on command if more ownable objects at location
+
     key = "zuweisen"
     aliases = ["übertrage", "übertragen"]
-    # locks = "cmd:perm(Builder)"
+    rhs_split = ("=", " auf ", " an ")  # Prefer = delimiter, but allow " to " usage.
     arg_regex = r"\s|$"
 
     def func(self):
 
-        if not self.args:
-            self.caller.msg("an wen?")
+        caller = self.caller
+
+        if not self.args or not self.rhs:
+            caller.msg("Benutzung: zuweisen <obj> an <charakter>")
+            return
+        
+        # find object
+        obj = self.caller.search(self.lhs)
+        if not obj:
+            return
+        if obj != self.obj:
+            self.caller.msg("Das kannst du nicht jemandem zuweisen.")
             return
 
-        new_owner = self.caller.search(self.args, global_search=True)
-
+        # find new owner
+        new_owner = caller.search(self.rhs, global_search=True)
         if not new_owner:
-            self.caller.msg(f"Kann {self.args} nicht finden.")
+            caller.msg(f"Kann {self.rhs} nicht finden.")
             return
 
         self.obj.locks.add(f"look_into: perm(Builder) or id({new_owner.id})")
@@ -133,7 +145,7 @@ class CmdDemise(COMMAND_DEFAULT_CLASS):
         self.obj.locks.add(f"call: perm(Admin) or id({new_owner.id})")
 
         self.caller.msg(
-            f"Eigentümerschaft von {self.obj.get_display_name(self.caller)} auf {new_owner.get_display_name(self.caller)} übertragen."
+            f"Eigentümerschaft von {self.obj.get_display_name(caller)} auf {new_owner.get_display_name(caller)} übertragen."
         )
 
 
