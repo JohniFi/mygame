@@ -2,6 +2,7 @@
 General Character commands usually available to all characters
 """
 
+from typing import Dict, Optional
 from evennia.commands.default import (
     general,
     help,
@@ -166,6 +167,7 @@ class CmdGet(general.CmdGet):
         if not moved:
             # none of the objects were successfully moved
             self.msg("Das kann nicht aufgehoben werden.")
+            return
         else:
             obj_name = moved[0].get_numbered_name(
                 len(moved), caller, return_string=True, case="accusative"
@@ -251,6 +253,7 @@ class CmdDrop(general.CmdDrop):
         if not moved:
             # none of the objects were successfully moved
             self.msg("Es konnte nichts abgelegt werden.")
+            return
         else:
             obj_name = moved[0].get_numbered_name(
                 len(moved), caller, return_string=True, case="accusative"
@@ -665,8 +668,8 @@ class CmdHelp(help.CmdHelp):
 
     def format_help_index(
         self,
-        cmd_help_dict=None,
-        db_help_dict=None,
+        cmd_help_dict: Optional[Dict] = None,
+        db_help_dict: Optional[Dict] = None,
         title_lone_category=False,
         click_topics=True,
     ):
@@ -745,8 +748,9 @@ class CmdHelp(help.CmdHelp):
         grid = []
         verbatim_elements = []
         cmd_grid, db_grid = "", ""
+        sep1, sep2 = "", ""
 
-        if any(cmd_help_dict.values()):
+        if cmd_help_dict and any(cmd_help_dict.values()):
             # get the command-help entries by-category
             sep1 = (
                 self.index_type_separator_clr
@@ -763,7 +767,7 @@ class CmdHelp(help.CmdHelp):
             )
             cmd_grid = ANSIString("\n").join(gridrows) if gridrows else ""
 
-        if any(db_help_dict.values()):
+        if db_help_dict and any(db_help_dict.values()):
             # get db-based help entries by-category
             sep2 = (
                 self.index_type_separator_clr

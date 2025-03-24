@@ -9,13 +9,16 @@ with a location in the game world (like Characters, Rooms, Exits).
 """
 
 from collections import defaultdict
+from typing import Iterable, Optional, Self, cast
 from django.utils.translation import gettext as _
+from evennia.objects.models import ObjectDB
 from evennia.objects.objects import DefaultObject
-from evennia.typeclasses.attributes import AttributeProperty
+from evennia.typeclasses.models import AttributeHandler
+from evennia.typeclasses.tags import AliasHandler, TagHandler
 from evennia.utils.utils import iter_to_str, make_iter
 
 
-class ObjectParent:
+class ObjectParent(DefaultObject):
     """
     This is a mixin that can be used to override *all* entities inheriting at
     some distance from DefaultObject (Objects, Exits, Characters and Rooms).
@@ -96,19 +99,17 @@ class ObjectParent:
         article_type = "def" if kwargs.get("definite_article") else "indef"
         case = kwargs.get("case", "nominative")
 
-        # gender = self.attributes.get("gender", default="n")  # Default to neutral
-        if self.tags.has(category="gender"):
-            gender = self.tags.get(category="gender")[0]
-        else:
-            gender = "n"
+        self_tags = cast(TagHandler, self.tags)
+        gender = (self_tags.get(category="gender") or ["n"])[0]
 
         # Retrieve custom attribute "plural"
-        plural = self.attributes.get("plural", default=key)
+        self_attributes = cast(AttributeHandler, self.attributes)
+        plural = self_attributes.get("plural", default=key)
 
-        if self.attributes.has(case):
+        if self_attributes.has(case):
             if case == "accusative" and count == 1:
                 # use accusative for singular
-                key = self.attributes.get(case)
+                key = self_attributes.get(case)
         # TODO: handle plural cases for "dative" and "genitive" (accusative plural = nominative plural)
 
         if kwargs.get("no_article") and count == 1:
@@ -145,8 +146,9 @@ class ObjectParent:
             },
         }
 
-        article_singular = (
-            articles.get(case, "nominative").get(gender, "n").get(article_type, "ein")
+        case_dict = articles.get(case, articles["nominative"])
+        article_singular = case_dict.get(gender, case_dict["n"]).get(
+            article_type, "ein"
         )
 
         num = ""
@@ -175,14 +177,17 @@ class ObjectParent:
                     num = count
 
             article_plural = "{}{}".format(
-                articles.get(case, "nominative").get("pl").get(article_type, "die"), num
+                case_dict["pl"].get(article_type, "die"), num
             )
 
         # update aliases
         # plural (without article)
-        self.aliases.add(plural, category=self.plural_category)
+        self_aliases = cast(AliasHandler, self.aliases)
+        self_aliases.add(plural, category=self.plural_category)
+        # self.aliases.add(plural, category=self.plural_category)
         # singular (with article)
-        self.aliases.add(f"{article_singular} {key}", category=self.plural_category)
+        self_aliases.add(f"{article_singular} {key}", category=self.plural_category)
+        # self.aliases.add(f"{article_singular} {key}", category=self.plural_category)
 
         # format strings with color formatting of the noun via get_display_name
         singular = f"{article_singular} {self.get_display_name(looker, key=key)}"
@@ -226,7 +231,9 @@ class ObjectParent:
             names.sort(key=lambda name: sort_index.get(name, end_pos))
             return names
 
-        exits = self.filter_visible(self.contents_get(content_type="exit"), looker, **kwargs)
+        exits = self.filter_visible(
+            self.contents_get(content_type="exit"), looker, **kwargs
+        )
         exit_names = (exi.get_display_name(looker, **kwargs) for exi in exits)
         exit_names = iter_to_str(
             _sort_exit_names(exit_names), endsep=_("und")
@@ -256,7 +263,9 @@ class ObjectParent:
         )
 
         return (
-            _("|wCharaktere:|n {c}").format(c=character_names) if character_names else ""
+            _("|wCharaktere:|n {c}").format(c=character_names)
+            if character_names
+            else ""
         )  # TODO: Pull-Request for i18
 
     def get_display_things(self, looker, **kwargs):
@@ -271,7 +280,9 @@ class ObjectParent:
 
         """
         # sort and handle same-named things
-        things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
+        things = self.filter_visible(
+            self.contents_get(content_type="object"), looker, **kwargs
+        )
 
         grouped_things = defaultdict(list)
         for thing in things:
@@ -281,7 +292,9 @@ class ObjectParent:
         for thingname, thinglist in sorted(grouped_things.items()):
             nthings = len(thinglist)
             thing = thinglist[0]
-            singular, plural = thing.get_numbered_name(nthings, looker, case="accusative")
+            singular, plural = thing.get_numbered_name(
+                nthings, looker, case="accusative"
+            )
             thing_names.append(singular if nthings == 1 else plural)
         thing_names = iter_to_str(
             thing_names, endsep=_("und")
@@ -294,7 +307,9 @@ class ObjectParent:
             else ""
         )
 
-    def announce_move_from(self, destination, msg=None, mapping=None, move_type="move", **kwargs):
+    def announce_move_from(
+        self, destination, msg=None, mapping=None, move_type="move", **kwargs
+    ):
         """
         Called if the move is to be announced. This is
         called while we are still standing in the old
@@ -334,7 +349,9 @@ class ObjectParent:
 
         location = self.location
         exits = [
-            o for o in location.contents if o.location is location and o.destination is destination
+            o
+            for o in location.contents
+            if o.location is location and o.destination is destination
         ]
         if not mapping:
             mapping = {}
@@ -360,7 +377,7 @@ class ObjectParent:
         message,
         msg_self=None,
         msg_location=None,
-        receivers=None,
+        receivers: Optional[Iterable] = None,
         msg_receivers=None,
         **kwargs,
     ):
@@ -433,8 +450,9 @@ class ObjectParent:
             msg_receivers = msg_receivers or message
 
         custom_mapping = kwargs.get("mapping", {})
-        receivers = make_iter(receivers) if receivers else None
-        location = self.location
+        if receivers:
+            receivers = cast(Iterable[Self], make_iter(receivers))
+        location = cast(ObjectDB, self.location)
 
         if msg_self:
             self_mapping = {
@@ -464,7 +482,8 @@ class ObjectParent:
                 "all_receivers": None,
                 "speech": message,
             }
-            for receiver in make_iter(receivers):
+            for receiver in receivers:
+                receiver: Object
                 individual_mapping = {
                     "object": self.get_display_name(receiver),
                     "location": location.get_display_name(receiver),
@@ -520,12 +539,14 @@ class ObjectParent:
         """
 
         # Clear plural aliases set by DefaultObject.get_numbered_name
-        self.aliases.clear(category=self.plural_category)
+        cast(AliasHandler, self.aliases).clear(category=self.plural_category)
         # Clear plural and accusative attributes
-        self.attributes.remove("plural")
-        self.attributes.remove("accusative")
+        self_attributes = cast(AttributeHandler, self.tags)
+        self_attributes.remove("plural")
+        self_attributes.remove("accusative")
         # probably same gender, so keep that for now
         # self.attributes.remove("gender")
+  
 
 
 class Object(ObjectParent, DefaultObject):

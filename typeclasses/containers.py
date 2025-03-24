@@ -1,5 +1,7 @@
+from typing import cast
 from evennia.commands.cmdset import CmdSet
 from evennia.typeclasses.attributes import AttributeProperty
+from evennia.typeclasses.models import LockHandler
 from evennia.utils.utils import class_from_module
 from .ownable import Ownable
 from .objects import Object
@@ -30,11 +32,11 @@ class Container(Ownable, Object):
         Edit: "look_into", "get_from" and "put_in"
         """
         super().at_object_creation()
-
-        self.locks.add("look_into:true()")
-        self.locks.add("get_from:true()")
-        self.locks.add("put_in:true()")
-        self.locks.add("set_owner:perm(Builder)")  # CmdDemise
+        self_locks = cast(LockHandler, self.locks)
+        self_locks.add("look_into:true()")
+        self_locks.add("get_from:true()")
+        self_locks.add("put_in:true()")
+        self_locks.add("set_owner:perm(Builder)")  # CmdDemise
 
     def at_pre_get_from(self, getter, target, **kwargs):
         """
@@ -69,7 +71,7 @@ class Container(Ownable, Object):
             To add more complex capacity checks, modify this method on your child typeclass.
         """
         # check if we're already at capacity
-        if len(self.contents) >= self.capacity:
+        if len(self.contents) >= cast(int, self.capacity):
             singular, _ = self.get_numbered_name(
                 1, putter, definite_article=True, case="accusative"
             )
@@ -99,8 +101,8 @@ class Container(Ownable, Object):
 
     # from class Ownable
     def set_owner(self, setter, target, **kwargs):
-        self.locks.add(f"look_into: perm(Builder) or id({target.id})")
-        self.locks.add(f"get_from: perm(Admin) or id({target.id})")
-        self.locks.add(f"put_in: perm(Builder) or id({target.id})")
-        self.locks.add(f"set_owner: perm(Builder) or id({target.id})")
-
+        self_locks = cast(LockHandler, self.locks)
+        self_locks.add(f"look_into: perm(Builder) or id({target.id})")
+        self_locks.add(f"get_from: perm(Admin) or id({target.id})")
+        self_locks.add(f"put_in: perm(Builder) or id({target.id})")
+        self_locks.add(f"set_owner: perm(Builder) or id({target.id})")

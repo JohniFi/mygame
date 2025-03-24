@@ -141,6 +141,7 @@ class CmdContainerGet(CmdGet):
         if not moved:
             # none of the objects were successfully moved
             self.msg("Das kann nicht aufgehoben werden.")
+            return
         else:
             obj_name = moved[0].get_numbered_name(
                 len(moved), caller, return_string=True, case="accusative"
@@ -255,6 +256,7 @@ class CmdPut(NumberedTargetCommand):
         if not moved:
             # none of the objects were successfully moved
             self.msg("Es konnte nichts abgelegt werden.")
+            return
         else:
             obj_name = moved[0].get_numbered_name(
                 len(moved), caller, return_string=True, case="accusative"
