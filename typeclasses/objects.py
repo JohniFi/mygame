@@ -16,6 +16,7 @@ from evennia.objects.objects import DefaultObject
 from evennia.typeclasses.models import AttributeHandler
 from evennia.typeclasses.tags import AliasHandler, TagHandler
 from evennia.utils.utils import iter_to_str, make_iter
+from world.enums import ObjectType
 
 
 class ObjectParent(DefaultObject):
@@ -150,7 +151,9 @@ class ObjectParent(DefaultObject):
         }
 
         case_dict = articles.get(case, articles["nominative"])
-        article_singular = case_dict.get(gender, case_dict["n"]).get(article_type, "ein")
+        article_singular = case_dict.get(gender, case_dict["n"]).get(
+            article_type, "ein"
+        )
 
         num = ""
         # if count == 0:
@@ -177,7 +180,9 @@ class ObjectParent(DefaultObject):
                 case _:
                     num = count
 
-            article_plural = "{}{}".format(case_dict["pl"].get(article_type, "die"), num)
+            article_plural = "{}{}".format(
+                case_dict["pl"].get(article_type, "die"), num
+            )
 
         # update aliases
         # plural (without article)
@@ -231,7 +236,9 @@ class ObjectParent(DefaultObject):
             names.sort(key=lambda name: sort_index.get(name, end_pos))
             return names
 
-        exits = self.filter_visible(self.contents_get(content_type="exit"), looker, **kwargs)
+        exits = self.filter_visible(
+            self.contents_get(content_type="exit"), looker, **kwargs
+        )
         exit_names = (exi.get_display_name(looker, **kwargs) for exi in exits)
         exit_names = iter_to_str(
             _sort_exit_names(exit_names), endsep=_("und")
@@ -262,7 +269,9 @@ class ObjectParent(DefaultObject):
         )
 
         return (
-            _("|wCharaktere:|n {c}").format(c=character_names) if character_names else ""
+            _("|wCharaktere:|n {c}").format(c=character_names)
+            if character_names
+            else ""
         )  # TODO: Pull-Request for i18
 
     @override
@@ -278,7 +287,9 @@ class ObjectParent(DefaultObject):
 
         """
         # sort and handle same-named things
-        things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
+        things = self.filter_visible(
+            self.contents_get(content_type="object"), looker, **kwargs
+        )
 
         grouped_things = defaultdict(list)
         for thing in things:
@@ -288,7 +299,9 @@ class ObjectParent(DefaultObject):
         for thingname, thinglist in sorted(grouped_things.items()):
             nthings = len(thinglist)
             thing = thinglist[0]
-            singular, plural = thing.get_numbered_name(nthings, looker, case="accusative")
+            singular, plural = thing.get_numbered_name(
+                nthings, looker, case="accusative"
+            )
             thing_names.append(singular if nthings == 1 else plural)
         thing_names = iter_to_str(
             thing_names, endsep=_("und")
@@ -302,7 +315,9 @@ class ObjectParent(DefaultObject):
         )
 
     @override
-    def announce_move_from(self, destination, msg=None, mapping=None, move_type="move", **kwargs):
+    def announce_move_from(
+        self, destination, msg=None, mapping=None, move_type="move", **kwargs
+    ):
         """
         Called if the move is to be announced. This is
         called while we are still standing in the old
@@ -342,7 +357,9 @@ class ObjectParent(DefaultObject):
 
         location = self.location
         exits = [
-            o for o in location.contents if o.location is location and o.destination is destination
+            o
+            for o in location.contents
+            if o.location is location and o.destination is destination
         ]
         if not mapping:
             mapping = {}
@@ -534,7 +551,7 @@ class ObjectParent(DefaultObject):
         # Clear plural aliases set by DefaultObject.get_numbered_name
         cast(AliasHandler, self.aliases).clear(category=self.plural_category)
         # Clear plural and accusative attributes
-        self_attributes = cast(AttributeHandler, self.tags)
+        self_attributes = cast(AttributeHandler, self.attributes)
         self_attributes.remove("plural")
         self_attributes.remove("accusative")
         # probably same gender, so keep that for now
@@ -732,4 +749,10 @@ class Object(ObjectParent, DefaultObject):
 
     """
 
-    pass
+    obj_type: list[ObjectType] = []
+
+    @override
+    def at_object_creation(self):
+        super().at_object_creation()
+        for obj_type in self.obj_type:
+            cast(TagHandler, self.tags).add(obj_type.value, category="obj_type")

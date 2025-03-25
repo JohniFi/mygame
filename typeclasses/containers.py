@@ -3,6 +3,7 @@ from evennia.commands.cmdset import CmdSet
 from evennia.typeclasses.attributes import AttributeProperty
 from evennia.typeclasses.models import LockHandler
 from evennia.utils.utils import class_from_module
+from world.enums import ObjectType
 from .ownable import Ownable
 from .objects import Object
 from django.conf import settings
@@ -21,6 +22,8 @@ class Container(Ownable, Object):
 
     It implements a very basic "size" limitation that is just a flat number of objects.
     """
+
+    obj_type = [ObjectType.CONTAINER]
 
     # This defines how many objects the container can hold.
     capacity = AttributeProperty(default=20)

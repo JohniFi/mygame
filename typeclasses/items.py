@@ -1,8 +1,12 @@
 from evennia.typeclasses.attributes import AttributeProperty
-from . import objects
+from .objects import Object
+from world.enums import ObjectType
 
 
-class Item(objects.Object):
+class Item(Object):
+
+    obj_type = [ObjectType.ITEM]
+
     # the weight of the Item
     weight = AttributeProperty(default=0)
 
@@ -11,5 +15,3 @@ class Item(objects.Object):
 
     # worth of gold
     worth = AttributeProperty(default=0)
-
-    # TODO: enum item_type

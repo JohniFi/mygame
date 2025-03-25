@@ -1,5 +1,5 @@
 NPC = {
-    "typeclass": "typeclasses.npcs.NPC",
+    "typeclass": "typeclasses.characters.NPC",
     "key": "NPC",
     "desc": "Ein normaler Dorfbewohner.",
     "tags": [("npc", "npc")],
