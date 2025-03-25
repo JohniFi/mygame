@@ -92,10 +92,12 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        
+        # hide some commands from normal players
         self.add(commands_lock.CmdCharCreate())
         self.add(commands_lock.CmdCharDelete())
-        # self.add(commands_lock.CmdIC())
-        # self.add(commands_lock.CmdOOC())
+        self.add(commands_lock.CmdIC())
+        self.add(commands_lock.CmdOOC())
         self.add(commands_lock.CmdSessions())
         self.add(commands_lock.CmdOption())
         self.add(commands_lock.CmdColorTest())

@@ -6,11 +6,11 @@ from evennia.commands.default import (
 
 # ----- GENERAL -----
 class CmdNick(general.CmdNick):
-    locks = "cmd:perm(Builder)"
+    locks = "cmd:pperm(Builder)"
 
 
 class CmdAccess(general.CmdAccess):
-    locks = "cmd:perm(Builder)"
+    locks = "cmd:pperm(Builder)"
 
 
 # ----- ACCOUNT -----
@@ -43,7 +43,7 @@ class CmdColorTest(account.CmdColorTest):
 
 
 class CmdQuell(account.CmdQuell):
-    locks = "cmd:perm(Builder)"
+    locks = "cmd:pperm(Builder)"
 
 
 class CmdStyle(account.CmdStyle):

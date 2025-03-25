@@ -80,3 +80,7 @@ class NPC(Object, DefaultCharacter):
                 )
 
         self_location.for_contents(message, exclude=[self], from_obj=self)
+
+    @override
+    def get_display_name(self, looker=None, **kwargs):
+        return f"|c{self.name}|n"

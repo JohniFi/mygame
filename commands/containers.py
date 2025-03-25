@@ -233,20 +233,21 @@ class CmdPut(NumberedTargetCommand):
                 self.msg("Du kannst da nichts reintun.")
             return
 
-        # if any objects fail the drop permission check, cancel the drop
+        # do the actual putting
+        moved = []
         for obj in objs:
             # Call the object's at_pre_drop() method.
             if not obj.at_pre_drop(caller):
                 self.msg(f"Das kannst du nicht ablegen: {obj.get_display_name(caller)}")
-                return
+                continue
+
             # Call the container's possible at_pre_put_in method.
             if hasattr(container, "at_pre_put_in") and not container.at_pre_put_in(caller, obj):
+                # TODO: add error message string to at_pre_put_in() instead calling msg here
                 self.msg("Das kannst du nicht da rein tun.")
-                return
+                continue
 
-        # do the actual putting
-        moved = []
-        for obj in objs:
+            # move objects            
             if obj.move_to(container, quiet=True, move_type="drop"):
                 moved.append(obj)
                 # Call the object's at_drop() method.
