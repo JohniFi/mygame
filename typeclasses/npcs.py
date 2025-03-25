@@ -1,7 +1,17 @@
-from .characters import Character
+from typing import Optional, cast
+from evennia.accounts.accounts import DefaultAccount
+from evennia.objects.objects import DefaultObject
+from evennia.typeclasses.attributes import AttributeProperty
+from .objects import Object
 
 
-class NPC(Character):
+class NPC(Object):
+
+    hp = AttributeProperty(default=1)
+    hp_max = AttributeProperty(default=1)
+
+    gold = AttributeProperty(default=0)
+
     def at_post_puppet(self, **kwargs):
         """
         Called just after puppeting has been completed and all
@@ -18,22 +28,25 @@ class NPC(Character):
             puppeting this Object.
 
         """
+        self_location = cast(DefaultObject, self.location)
+
         self.msg(
             "Dein Geist fährt in den Körper von {name}.".format(name=self.get_display_name(self))
         )
-        self.msg((self.at_look(self.location), {"type": "look"}), options=None)
+        self.msg((self.at_look(self_location), {"type": "look"}), options=None)
 
-        def message(obj, from_obj):
-            obj.msg(
-                "Der Geist von {puppeteer} fährt in den Körper von {name}.".format(
-                    name=self.get_display_name(obj), puppeteer=self.account.get_display_name(obj)
-                ),
-                from_obj=from_obj,
-            )
+        def message(obj: DefaultObject, from_obj):
+            if self.has_account:
+                obj.msg(
+                    "Der Geist von {puppeteer} fährt in den Körper von {name}.".format(
+                        name=self.get_display_name(obj), puppeteer=account.get_display_name(obj)  # type: ignore
+                    ),
+                    from_obj=from_obj,
+                )
 
-        self.location.for_contents(message, exclude=[self], from_obj=self)
+        self_location.for_contents(message, exclude=[self], from_obj=self)
 
-    def at_post_unpuppet(self, account=None, session=None, **kwargs):
+    def at_post_unpuppet(self, account: Optional[DefaultAccount] = None, session=None, **kwargs):
         """
         We stove away the character when the account goes ooc/logs off,
         otherwise the character object will remain in the room also
@@ -51,17 +64,17 @@ class NPC(Character):
                 overriding the call (unused by default).
 
         """
-        account.msg(
-            "Du verlässt den Körper von {name}.\n".format(name=self.get_display_name(self))
-        )
-        self.msg((self.at_look(self.location), {"type": "look"}), options=None)
+        self_location = cast(DefaultObject, self.location)
+        self.msg("Du verlässt den Körper von {name}.\n".format(name=self.get_display_name(self)))
+        self.msg((self.at_look(self_location), {"type": "look"}), options=None)
 
-        def message(obj, from_obj):
-            obj.msg(
-                "Der Geist von {puppeteer} verlässt den Körper von {name}.".format(
-                    name=self.get_display_name(obj), puppeteer=account.get_display_name(obj)
-                ),
-                from_obj=from_obj,
-            )
+        def message(obj: DefaultObject, from_obj):
+            if account:
+                obj.msg(
+                    "Der Geist von {puppeteer} verlässt den Körper von {name}.".format(
+                        name=self.get_display_name(obj), puppeteer=account.get_display_name(obj)
+                    ),
+                    from_obj=from_obj,
+                )
 
-        self.location.for_contents(message, exclude=[self], from_obj=self)
+        self_location.for_contents(message, exclude=[self], from_obj=self)
