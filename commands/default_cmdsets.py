@@ -14,6 +14,7 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 """
 
+from typing import override
 from evennia import default_cmds
 from evennia.commands.default import (
     general,
@@ -32,6 +33,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
     key = "DefaultCharacter"
 
+    @override
     def at_cmdset_creation(self):
         """
         Populates the cmdset
@@ -81,6 +83,7 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
 
     key = "DefaultAccount"
 
+    @override
     def at_cmdset_creation(self):
         """
         Populates the cmdset
@@ -91,8 +94,8 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         #
         self.add(commands_lock.CmdCharCreate())
         self.add(commands_lock.CmdCharDelete())
-        self.add(commands_lock.CmdIC())
-        self.add(commands_lock.CmdOOC())
+        # self.add(commands_lock.CmdIC())
+        # self.add(commands_lock.CmdOOC())
         self.add(commands_lock.CmdSessions())
         self.add(commands_lock.CmdOption())
         self.add(commands_lock.CmdColorTest())
@@ -108,6 +111,7 @@ class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
 
     key = "DefaultUnloggedin"
 
+    @override
     def at_cmdset_creation(self):
         """
         Populates the cmdset
@@ -126,6 +130,7 @@ class SessionCmdSet(default_cmds.SessionCmdSet):
 
     key = "DefaultSession"
 
+    @override
     def at_cmdset_creation(self):
         """
         This is the only method defined in a cmdset, called during

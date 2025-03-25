@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, override
 from evennia.commands.cmdset import CmdSet
 from evennia.typeclasses.attributes import AttributeProperty
 from evennia.typeclasses.models import LockHandler
@@ -15,12 +15,17 @@ class Container(Ownable, Object):
     (based on ContribContainer)
     A type of Object which can be used as a container.
 
+    Implements hooks
+     - at_pre_get_from()
+     - at_pre_put_in()
+
     It implements a very basic "size" limitation that is just a flat number of objects.
     """
 
     # This defines how many objects the container can hold.
     capacity = AttributeProperty(default=20)
 
+    @override
     def at_object_creation(self):
         """
         Extends the base object `at_object_creation` method by setting the "get_from" lock to "true",
@@ -80,6 +85,7 @@ class Container(Ownable, Object):
 
         return True
 
+    @override
     def get_display_things(self, looker, **kwargs):
         """
         Get the 'things' component of the object description. Called by `return_appearance`.
@@ -100,6 +106,7 @@ class Container(Ownable, Object):
             return super().get_display_things(looker, **kwargs)
 
     # from class Ownable
+    @override
     def set_owner(self, setter, target, **kwargs):
         self_locks = cast(LockHandler, self.locks)
         self_locks.add(f"look_into: perm(Builder) or id({target.id})")

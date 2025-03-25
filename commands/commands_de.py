@@ -2,7 +2,7 @@
 General Character commands usually available to all characters
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, override
 from evennia.commands.default import (
     general,
     help,
@@ -41,6 +41,7 @@ class CmdLook(general.CmdLook):
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
+    @override
     def func(self):
         """
         Handle the looking.
@@ -77,6 +78,7 @@ class CmdInventory(general.CmdInventory):
     locks = "cmd:all()"
     arg_regex = r"$"
 
+    @override
     def func(self):
         """check inventory"""
         items = self.caller.contents
@@ -124,6 +126,7 @@ class CmdGet(general.CmdGet):
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
+    @override
     def func(self):
         """implements the command."""
 
@@ -212,6 +215,7 @@ class CmdDrop(general.CmdDrop):
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
+    @override
     def func(self):
         """Implement command"""
 
@@ -306,6 +310,7 @@ class CmdGive(general.CmdGive):
     locks = "cmd:all()"
     arg_regex = r"^[ /]|\n|$"
 
+    @override
     def func(self):
         """Implement give"""
 
@@ -429,6 +434,7 @@ class CmdSetDesc(general.CmdSetDesc):
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
+    @override
     def func(self):
         """add the description"""
 
@@ -467,6 +473,7 @@ class CmdSay(general.CmdSay):
     # don't require a space after `say/'/"`
     arg_regex = None
 
+    @override
     def func(self):
         """Run the say command"""
 
@@ -514,6 +521,7 @@ class CmdWhisper(general.CmdWhisper):
     ]
     locks = "cmd:all()"
 
+    @override
     def func(self):
         """Run the whisper command"""
 
@@ -580,6 +588,7 @@ class CmdHelp(help.CmdHelp):
 
     # ...
 
+    @override
     def format_help_entry(
         self,
         topic="",
@@ -666,6 +675,7 @@ class CmdHelp(help.CmdHelp):
 
     # ...
 
+    @override
     def format_help_index(
         self,
         cmd_help_dict: Optional[Dict] = None,

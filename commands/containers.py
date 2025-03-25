@@ -1,3 +1,4 @@
+from typing import override
 from evennia.commands.cmdset import CmdSet
 from evennia.commands.default.general import NumberedTargetCommand
 from evennia.utils import utils
@@ -12,6 +13,7 @@ class ContainerCmdSet(CmdSet):
 
     key = "Container CmdSet"
 
+    @override
     def at_cmdset_creation(self):
         super().at_cmdset_creation()
 
@@ -24,6 +26,7 @@ class CmdContainerLook(CmdLook):
 
     rhs_split = (" in ",)
 
+    @override
     def func(self):
         """
         Handle the looking.
@@ -75,6 +78,7 @@ class CmdContainerGet(CmdGet):
 
     rhs_split = (" aus ",)
 
+    @override
     def func(self):
         caller = self.caller
         # by default, we get from the caller's location
@@ -120,9 +124,7 @@ class CmdContainerGet(CmdGet):
                 return
 
             # calling possible at_pre_get_from hook on location
-            if hasattr(location, "at_pre_get_from") and not location.at_pre_get_from(
-                caller, obj
-            ):
+            if hasattr(location, "at_pre_get_from") and not location.at_pre_get_from(caller, obj):
                 self.msg("Das kannst du nicht da raus bekommen.")
                 return
 
@@ -161,9 +163,7 @@ class CmdContainerGet(CmdGet):
             if location == caller.location:
                 receiver.msg(f"{caller_name} nimmt sich {obj_name}.")
             else:
-                receiver.msg(
-                    f"{caller_name} nimmt sich {obj_name} aus {container_name}."
-                )
+                receiver.msg(f"{caller_name} nimmt sich {obj_name} aus {container_name}.")
 
         if location == caller.location:
             caller.msg(f"Du nimmst dir {obj_name}.")
@@ -194,6 +194,7 @@ class CmdPut(NumberedTargetCommand):
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
+    @override
     def func(self):
 
         caller = self.caller
@@ -239,9 +240,7 @@ class CmdPut(NumberedTargetCommand):
                 self.msg(f"Das kannst du nicht ablegen: {obj.get_display_name(caller)}")
                 return
             # Call the container's possible at_pre_put_in method.
-            if hasattr(container, "at_pre_put_in") and not container.at_pre_put_in(
-                caller, obj
-            ):
+            if hasattr(container, "at_pre_put_in") and not container.at_pre_put_in(caller, obj):
                 self.msg("Das kannst du nicht da rein tun.")
                 return
 
@@ -276,6 +275,3 @@ class CmdPut(NumberedTargetCommand):
             receiver.msg(f"{caller_name} tut {obj_name} in {container_name}.")
 
         caller.msg(f"Du tust {obj_name} in {container_name}.")
-
-
-# TODO: CmdSetOwner

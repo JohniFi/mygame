@@ -7,4 +7,7 @@ class Ownable(Object):
     """
 
     def set_owner(self, setter, target, **kwargs):
+        """
+        Set a new owner for this object.
+        """
         pass

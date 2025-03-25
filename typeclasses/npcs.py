@@ -1,17 +1,18 @@
-from typing import Optional, cast
+from typing import Optional, cast, override
 from evennia.accounts.accounts import DefaultAccount
-from evennia.objects.objects import DefaultObject
+from evennia.objects.objects import DefaultCharacter, DefaultObject
 from evennia.typeclasses.attributes import AttributeProperty
 from .objects import Object
 
 
-class NPC(Object):
+class NPC(Object, DefaultCharacter):
 
     hp = AttributeProperty(default=1)
     hp_max = AttributeProperty(default=1)
 
     gold = AttributeProperty(default=0)
 
+    @override
     def at_post_puppet(self, **kwargs):
         """
         Called just after puppeting has been completed and all
@@ -39,13 +40,14 @@ class NPC(Object):
             if self.has_account:
                 obj.msg(
                     "Der Geist von {puppeteer} fährt in den Körper von {name}.".format(
-                        name=self.get_display_name(obj), puppeteer=account.get_display_name(obj)  # type: ignore
+                        name=self.get_display_name(obj), puppeteer=self.account.get_display_name(obj)  # type: ignore
                     ),
                     from_obj=from_obj,
                 )
 
         self_location.for_contents(message, exclude=[self], from_obj=self)
 
+    @override
     def at_post_unpuppet(self, account: Optional[DefaultAccount] = None, session=None, **kwargs):
         """
         We stove away the character when the account goes ooc/logs off,
