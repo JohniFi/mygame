@@ -13,6 +13,7 @@ from typing import Iterable, Optional, Self, cast, override
 from django.utils.translation import gettext as _
 from evennia.objects.models import ObjectDB
 from evennia.objects.objects import DefaultObject
+from evennia.typeclasses.attributes import AttributeProperty
 from evennia.typeclasses.models import AttributeHandler
 from evennia.typeclasses.tags import AliasHandler, TagHandler
 from evennia.utils.utils import iter_to_str, make_iter
@@ -32,6 +33,9 @@ class ObjectParent(DefaultObject):
 
     # Used by get_display_desc when self.db.desc is None
     default_description = _("Du siehst nichts Besonderes")
+
+    # used in get_display_name()
+    color_code = AttributeProperty(default="|w")
 
     # TODO: evaluate LANGUAGE_CODE and only overwrite methods if German (DE)
     # TODO: i18n of Strings from "mygame". Possibly add pullrequest to mark Strings here with _("...") so you don't need to overwrite get_display_things
@@ -54,7 +58,7 @@ class ObjectParent(DefaultObject):
 
         """
         name = kwargs.get("key", self.name)
-        return f"|w{name}|n"
+        return f"{self.color_code}{name}|n"
 
     @override
     def get_search_direct_match(self, searchdata, **kwargs):
@@ -151,9 +155,7 @@ class ObjectParent(DefaultObject):
         }
 
         case_dict = articles.get(case, articles["nominative"])
-        article_singular = case_dict.get(gender, case_dict["n"]).get(
-            article_type, "ein"
-        )
+        article_singular = case_dict.get(gender, case_dict["n"]).get(article_type, "ein")
 
         num = ""
         # if count == 0:
@@ -180,9 +182,7 @@ class ObjectParent(DefaultObject):
                 case _:
                     num = count
 
-            article_plural = "{}{}".format(
-                case_dict["pl"].get(article_type, "die"), num
-            )
+            article_plural = "{}{}".format(case_dict["pl"].get(article_type, "die"), num)
 
         # update aliases
         # plural (without article)
@@ -236,9 +236,7 @@ class ObjectParent(DefaultObject):
             names.sort(key=lambda name: sort_index.get(name, end_pos))
             return names
 
-        exits = self.filter_visible(
-            self.contents_get(content_type="exit"), looker, **kwargs
-        )
+        exits = self.filter_visible(self.contents_get(content_type="exit"), looker, **kwargs)
         exit_names = (exi.get_display_name(looker, **kwargs) for exi in exits)
         exit_names = iter_to_str(
             _sort_exit_names(exit_names), endsep=_("und")
@@ -269,9 +267,7 @@ class ObjectParent(DefaultObject):
         )
 
         return (
-            _("|wCharaktere:|n {c}").format(c=character_names)
-            if character_names
-            else ""
+            _("|wCharaktere:|n {c}").format(c=character_names) if character_names else ""
         )  # TODO: Pull-Request for i18
 
     @override
@@ -287,9 +283,7 @@ class ObjectParent(DefaultObject):
 
         """
         # sort and handle same-named things
-        things = self.filter_visible(
-            self.contents_get(content_type="object"), looker, **kwargs
-        )
+        things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
 
         grouped_things = defaultdict(list)
         for thing in things:
@@ -299,9 +293,7 @@ class ObjectParent(DefaultObject):
         for thingname, thinglist in sorted(grouped_things.items()):
             nthings = len(thinglist)
             thing = thinglist[0]
-            singular, plural = thing.get_numbered_name(
-                nthings, looker, case="accusative"
-            )
+            singular, plural = thing.get_numbered_name(nthings, looker, case="accusative")
             thing_names.append(singular if nthings == 1 else plural)
         thing_names = iter_to_str(
             thing_names, endsep=_("und")
@@ -315,9 +307,7 @@ class ObjectParent(DefaultObject):
         )
 
     @override
-    def announce_move_from(
-        self, destination, msg=None, mapping=None, move_type="move", **kwargs
-    ):
+    def announce_move_from(self, destination, msg=None, mapping=None, move_type="move", **kwargs):
         """
         Called if the move is to be announced. This is
         called while we are still standing in the old
@@ -357,9 +347,7 @@ class ObjectParent(DefaultObject):
 
         location = self.location
         exits = [
-            o
-            for o in location.contents
-            if o.location is location and o.destination is destination
+            o for o in location.contents if o.location is location and o.destination is destination
         ]
         if not mapping:
             mapping = {}

@@ -5,5 +5,5 @@ NPC = {
     "tags": [("npc", "npc")],
     "hp": 100,
     "hp_max": 100,
-    "gold": 0,
+    #"gold": 0,
 }
