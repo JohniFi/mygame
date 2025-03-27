@@ -35,6 +35,7 @@ class CharacterParent(ObjectParent):
     def at_object_creation(self):
         super().at_object_creation()
         # call all AttributeProperty to initialize in database
+        # not needed anymore after pull request https://github.com/evennia/evennia/pull/3753
         self.hp
         self.hp_max
         self.gold
@@ -45,9 +46,12 @@ class CharacterParent(ObjectParent):
         return ""
         # TODO: add lock for peeking in inventar of others (maybe special skill?)
 
-    def update_prompt(self):
+    def get_prompt(self):
         health_bar = display_meter(self.hp, self.hp_max)
-        self.msg(prompt=f"{self.name} | HP: {health_bar} | Gold: {self.gold}")
+        return f"{self.name} | {health_bar} | 🪙: {self.gold}"
+
+    def update_prompt(self):
+        self.msg(prompt=self.get_prompt())
 
     def heal(self, healing, healer=None):
         """
@@ -117,11 +121,9 @@ class Character(CharacterParent, DefaultCharacter):
         self.update_prompt()
 
     @override
-    def update_prompt(self):
+    def get_prompt(self):
         health_bar = display_meter(self.hp, self.hp_max)
-        self.msg(
-            prompt=f"HP: {health_bar} | Gold: {self.gold} | Level: {self.level} ({self.xp}) | Ansehen: {self.reputation}"
-        )
+        return f"{health_bar} | 🪙: {self.gold} | 🤝: {self.reputation} | Level: {self.level} ({self.xp} EP)"
 
 
 class NPC(CharacterParent, DefaultCharacter):
