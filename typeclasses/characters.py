@@ -53,14 +53,16 @@ class CharacterParent(ObjectParent):
     def update_prompt(self):
         self.msg(prompt=self.get_prompt())
 
-    def heal(self, healing:int, healer=None):
+    def heal(self, healing: int, healer=None):
         """
         Heal by a certain amount of HP.
 
         """
+        healing = int(healing)
+
         if healing < 0:
             return
-        
+
         hp = cast(int, self.hp)
         hp_max = cast(int, self.hp_max)
 
@@ -77,14 +79,16 @@ class CharacterParent(ObjectParent):
         # update health-bar
         self.update_prompt()
 
-    def damage(self, damage:int, attacker=None):
+    def damage(self, damage: int, attacker=None):
         """
         Get damaged by a certain amount of HP.
 
         """
+        damage = int(damage)
+
         if damage < 0:
             return
-        
+
         hp = cast(int, self.hp)
 
         damage = min(damage, hp)
