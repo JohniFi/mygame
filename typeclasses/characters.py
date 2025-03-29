@@ -12,7 +12,7 @@ from typing import Optional, cast, override
 from evennia.accounts.accounts import DefaultAccount
 from evennia.objects.objects import DefaultCharacter, DefaultObject
 from evennia.typeclasses.attributes import AttributeProperty
-from evennia.contrib.rpg.health_bar import display_meter
+from world.health_bar import display_meter
 from .objects import ObjectParent
 
 
