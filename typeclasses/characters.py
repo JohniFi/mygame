@@ -103,6 +103,15 @@ class CharacterParent(ObjectParent):
         # update health-bar
         self.update_prompt()
 
+    # TODO: generalize at_post_puppet() and at_post_unpuppet() with attribute message string for
+    # self and others and attribute driven trigger start and pause (e.g. for healing, starving)
+
+    # @override
+    # def at_post_puppet(self, **kwargs):
+
+    # @override
+    # def at_post_unpuppet(self, account: Optional[DefaultAccount] = None, session=None, **kwargs):
+
 
 class Character(CharacterParent, DefaultCharacter):
     """
