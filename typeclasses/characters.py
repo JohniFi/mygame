@@ -58,16 +58,16 @@ class CharacterParent(ObjectParent):
         Heal by a certain amount of HP.
 
         """
-        healing = int(healing)
-
-        if healing < 0:
-            return
-
         hp = cast(int, self.hp)
         hp_max = cast(int, self.hp_max)
+        healing = int(healing)
 
         damage = hp_max - hp
         healed = min(damage, healing)
+
+        if healed <= 0:
+            return
+
         self.hp += healed  # type: ignore
 
         if healer is self:
@@ -84,14 +84,14 @@ class CharacterParent(ObjectParent):
         Get damaged by a certain amount of HP.
 
         """
+        hp = cast(int, self.hp)
         damage = int(damage)
 
-        if damage < 0:
+        damage = min(damage, hp)
+
+        if damage <= 0:
             return
 
-        hp = cast(int, self.hp)
-
-        damage = min(damage, hp)
         self.hp -= damage  # type: ignore
 
         if attacker is self:
@@ -111,6 +111,45 @@ class CharacterParent(ObjectParent):
 
     # @override
     # def at_post_unpuppet(self, account: Optional[DefaultAccount] = None, session=None, **kwargs):
+
+    def gold_set(self, amount: int, **kwargs):
+        """
+        Add the positive or negative amount of gold to the current self.gold attribute.
+        If the result is negative: abort, return None
+        Else execute transaction an return amount
+        """
+        amount = int(amount)
+        if amount < 0:
+            return None
+
+        diff: int = amount - self.gold  # type: ignore
+        self.gold = amount
+        self.at_pot_gold_change(diff)
+        return amount
+
+    def gold_diff(self, amount: int, **kwargs):
+        """
+        Add the positive or negative amount of gold to the current self.gold attribute.
+        If the result is negative: abort, return None
+        Else execute transaction an return amount
+        """
+        amount = int(amount)
+        if cast(int, self.gold) + amount < 0:
+            return None
+
+        self.gold += amount  # type: ignore
+        self.at_pot_gold_change(amount)
+        return amount
+
+    def at_pot_gold_change(self, amount: int, **kwargs):
+        """
+        Called after the gold attribute changed via gold_set or gold_diff
+        """
+        if amount < 0:
+            self.msg(f"Du verlierst {amount} Gold.")
+        elif amount > 0:
+            self.msg(f"Du erhältst {amount} Gold.")
+        self.update_prompt()
 
 
 class Character(CharacterParent, DefaultCharacter):
