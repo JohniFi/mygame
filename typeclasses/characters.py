@@ -48,7 +48,7 @@ class CharacterParent(ObjectParent):
 
     def get_prompt(self):
         health_bar = display_meter(self.hp, self.hp_max)
-        return f"{self.name} | {health_bar} | 🪙: {self.gold}"
+        return f"{self.get_display_name()} | HP: {health_bar} | |540Gold: {self.gold}|n"
 
     def update_prompt(self):
         self.msg(prompt=self.get_prompt())
@@ -181,7 +181,7 @@ class Character(CharacterParent, DefaultCharacter):
     @override
     def get_prompt(self):
         health_bar = display_meter(self.hp, self.hp_max)
-        return f"{health_bar} | 🪙: {self.gold} | 🤝: {self.reputation} | Level: {self.level} ({self.xp} EP)"
+        return f"HP: {health_bar} | |540Gold: {self.gold}|n | Ansehen: {self.reputation} | Level: {self.level} ({self.xp} EP)"
 
 
 class NPC(CharacterParent, DefaultCharacter):

@@ -37,10 +37,10 @@ module:
 def display_meter(
     cur_value,
     max_value,
-    length=30,
+    length=10,
     fill_color=["r", "y", "g"],
-    empty_color="=e",
-    text_color="B",
+    empty_color="x",
+    text_color="X",
     align="left",
     pre_text="",
     post_text="",
@@ -81,11 +81,14 @@ def display_meter(
     # Start by building the base string.
     num_text = ""
     if show_values:
-        num_text = "%i / %i" % (cur_value, max_value)
+        num_text = "%i/%i" % (cur_value, max_value)
     bar_base_str = pre_text + num_text + post_text
-    # Cut down the length of the base string if needed
+    # # Cut down the length of the base string if needed
+    # if len(bar_base_str) > length:
+    #     bar_base_str = bar_base_str[:length]
+    # grow length of the bar if base string is too long
     if len(bar_base_str) > length:
-        bar_base_str = bar_base_str[:length]
+        length = len(bar_base_str)
     # Pad and align the bar base string
     if align == "right":
         bar_base_str = bar_base_str.rjust(length, " ")
