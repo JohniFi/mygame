@@ -146,9 +146,9 @@ class CharacterParent(ObjectParent):
         Called after the gold attribute changed via gold_set or gold_diff
         """
         if amount < 0:
-            self.msg(f"Du verlierst {amount} Gold.")
+            self.msg(f"Du verlierst |540Gold: {amount}|n.")
         elif amount > 0:
-            self.msg(f"Du erhältst {amount} Gold.")
+            self.msg(f"Du erhältst |540Gold: +{amount}|n.")
         self.update_prompt()
 
 
