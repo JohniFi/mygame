@@ -12,7 +12,10 @@ just overloads its hooks to have it perform its function.
 
 """
 
+import random
+from typing import cast, override
 from evennia.scripts.scripts import DefaultScript
+from evennia.typeclasses.attributes import AttributeProperty
 
 
 class Script(DefaultScript):
@@ -101,3 +104,62 @@ class Script(DefaultScript):
     """
 
     pass
+
+
+class Pitchman(DefaultScript):
+    """
+    Sends messages to the contents of the location of it's object.
+    Default interval is 2 seconds.
+    self.frequency is the probability for each interval to fire a message
+
+    messages: List of messages
+        can contain placeholders:
+        - {obj} : the object the script is attached to
+        - {char}: a random character in the room
+
+    """
+
+    frequency = AttributeProperty(0.5)
+    messages = AttributeProperty(
+        [
+            '{obj} sagt: "Hallo {char}!"',
+        ]
+    )
+    weights = AttributeProperty([])
+
+    def at_script_creation(self):
+        self.key = "pitchman"
+        self.desc = "sends messages to location contents"
+        self.interval = 2  # seconds
+        # self.repeats = 5  # repeat only a certain number of times
+        self.start_delay = True  # wait self.interval until first call
+        # self.persistent = True
+
+    @override
+    def at_repeat(self, **kwargs):
+        """
+        This gets called every self.interval seconds. We make
+        a random check here so as to only return 33% of the time.
+        """
+        if random.random() > cast(float, self.frequency):
+            # no message this time
+            return
+
+        messages = cast(list, self.messages)
+        weights = cast(list, self.weights)
+
+        if len(weights) < 1 or len(weights) != len(messages):
+            # no or incompatible weights -> equal distribution as fallback
+            message = random.choices(messages)[0]
+        else:
+            message = random.choices(messages, weights)[0]
+
+        # look for characters in the room
+        chars = self.obj.search("", typeclass="typeclasses.characters.Character", quiet=True)
+        if len(chars) > 0:
+            char = random.choices(chars)[0].get_display_name()
+        else:
+            char = "Abenteurer"
+
+        message = message.format(obj=self.obj.get_display_name(), char=char)
+        self.obj.location.msg_contents(message)
